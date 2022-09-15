@@ -2,6 +2,29 @@ import { useState, useRef, useEffect } from 'react';
 import socket from '../../socket';
 import styles from './Minesweeper.module.scss';
 
+const levels = [
+  {
+    id: 1,
+    name: 'Beginner',
+    handleNewLevel: () => socket.send('new 1'),
+  },
+  {
+    id: 2,
+    name: 'Medium',
+    handleNewLevel: () => socket.send('new 2'),
+  },
+  {
+    id: 3,
+    name: 'Advanced',
+    handleNewLevel: () => socket.send('new 3'),
+  },
+  {
+    id: 4,
+    name: 'Hardcore',
+    handleNewLevel: () => socket.send('new 4'),
+  },
+];
+
 const Minesweeper = () => {
   const [field, setField] = useState<string[][]>([]);
   const [flaggedCells, setFlaggedCells] = useState<string[]>([]);
@@ -17,7 +40,6 @@ const Minesweeper = () => {
     };
 
     socket.onmessage = ({ data }) => {
-      console.log(data);
       if (data.includes('new') || data.includes('open: OK')
       || data.includes('open: You lose') || data.includes('open: You win')) {
         socket.send('map');
@@ -25,8 +47,7 @@ const Minesweeper = () => {
       if (data.includes('map')) {
         const adjustedField = data.split('\n').slice(1, -1).map((cell: any) => cell.split(''));
         setField(adjustedField);
-
-        console.log(adjustedField);
+        setFlaggedCells([]);
       }
     };
 
@@ -105,6 +126,17 @@ const Minesweeper = () => {
   return (
     <div>
       <button onClick={() => socket.send('help')}>help</button>
+      <div>
+        {levels.map(({ id, name, handleNewLevel }) => (
+          <button
+            className={styles.levelBtn}
+            key={id}
+            onClick={handleNewLevel}
+          >
+            {name}
+          </button>
+        ))}
+      </div>
       <div>
         {field.map((cellsRow, y) => (
           <div key={Math.random() * 15785} className={styles.fieldRow}>
