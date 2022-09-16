@@ -2,33 +2,163 @@ import { useState, useRef, useEffect } from 'react';
 import socket from '../../socket';
 import styles from './Minesweeper.module.scss';
 
-const levels = [
-  {
-    id: 1,
-    name: 'Beginner',
-    handleNewLevel: () => socket.send('new 1'),
-  },
-  {
-    id: 2,
-    name: 'Medium',
-    handleNewLevel: () => socket.send('new 2'),
-  },
-  {
-    id: 3,
-    name: 'Advanced',
-    handleNewLevel: () => socket.send('new 3'),
-  },
-  {
-    id: 4,
-    name: 'Hardcore',
-    handleNewLevel: () => socket.send('new 4'),
-  },
-];
-
 const Minesweeper = () => {
   const [field, setField] = useState<string[][]>([]);
+  const [previousField, setPreviousField] = useState<string[][]>([]);
   const [flaggedCells, setFlaggedCells] = useState<string[]>([]);
+  const [columns, setColumns] = useState(0);
+  const [rows, setRows] = useState(0);
+  const [autoSolver, setAutoSolver] = useState(false);
   const ws = useRef<any>(null);
+
+  const newLevel = (level: number) => {
+    socket.send(`new ${level}`);
+    setFlaggedCells([]);
+  };
+
+  const levels = [
+    {
+      id: 1,
+      name: 'Beginner',
+      handleNewLevel: () => newLevel(1),
+    },
+    {
+      id: 2,
+      name: 'Medium',
+      handleNewLevel: () => newLevel(2),
+    },
+    {
+      id: 3,
+      name: 'Advanced',
+      handleNewLevel: () => newLevel(3),
+    },
+    {
+      id: 4,
+      name: 'Hardcore',
+      handleNewLevel: () => newLevel(4),
+    },
+  ];
+
+  const fieldsAreTheSame = (array1: any, array2: any) => {
+    if (!Array.isArray(array1) && !Array.isArray(array2)) {
+      return array1 === array2;
+    }
+
+    if (array1.length !== array2.length) {
+      return false;
+    }
+
+    for (let i = 0, len = array1.length; i < len; i += 1) {
+      if (!fieldsAreTheSame(array1[i], array2[i])) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const openCell = (x: number, y: number) => {
+    socket.send(`open ${x} ${y}`);
+
+    // ensures the previous field is saved to compare in next response
+    setPreviousField(field);
+  };
+
+  const getSurroundingCellInfo = (x: number, y: number) => {
+    const surroundingBombs = field[x][y];
+
+    let surroundingCells = [
+      {
+        position: 'topLeft',
+        x: x - 1,
+        y: y - 1,
+      },
+      {
+        position: 'top',
+        x,
+        y: y - 1,
+      },
+      {
+        position: 'topRight',
+        x: x + 1,
+        y: y - 1,
+      },
+      {
+        position: 'right',
+        x: x + 1,
+        y,
+      },
+      {
+        position: 'bottomRight',
+        x: x + 1,
+        y: y + 1,
+      },
+      {
+        position: 'bottom',
+        x,
+        y: y + 1,
+      },
+      {
+        position: 'bottomLeft',
+        x: x - 1,
+        y: y + 1,
+      },
+      {
+        position: 'left',
+        x: x - 1,
+        y,
+      },
+    ];
+
+    // checks if out of bounds and adds known values of the in bounds cells
+    surroundingCells = surroundingCells.map((cell) => {
+      let outOfBounds = false;
+      let value = '';
+
+      if (cell.x < 0 || cell.y < 0) {
+        outOfBounds = true;
+      } else if (cell.x > columns || cell.y > rows) {
+        outOfBounds = true;
+      } else {
+        value = field[cell.x][cell.y];
+      }
+
+      return { ...cell, outOfBounds, value };
+    });
+
+    return { surroundingBombs, surroundingCells };
+  };
+
+  // function requires reverse coordinates to work ex: instead of (x, y)  to => (y, x) instead
+  const checkSurroundingCells = (y: number, x: number) => {
+    const { surroundingBombs, surroundingCells } = getSurroundingCellInfo(y, x);
+    console.log(surroundingCells);
+    // openCell(surroundingCells[2].x, surroundingCells[2].y);
+  };
+
+  const autoSolve = () => {
+    if (!autoSolver) {
+      // tells useEffect to catch any field updates from the server
+      setAutoSolver(true);
+
+      // opens initial cell
+      openCell(0, 0);
+
+      // ensures the previous field is saved to compare in next response
+      setPreviousField(field);
+    } else {
+      checkSurroundingCells(0, 0);
+    }
+  };
+
+  useEffect(() => {
+    if (autoSolver) {
+      // checks if anything changed to avoid infinity loop
+      if (!fieldsAreTheSame(previousField, field)) {
+        autoSolve();
+      }
+    }
+  }, [field]);
 
   useEffect(() => {
     socket.onopen = () => {
@@ -41,20 +171,21 @@ const Minesweeper = () => {
 
     socket.onmessage = ({ data }) => {
       if (data.includes('new') || data.includes('open: OK')
-      || data.includes('open: You lose') || data.includes('open: You win')) {
+       || data.includes('open: You lose') || data.includes('open: You win')) {
         socket.send('map');
       }
       if (data.includes('map')) {
         const adjustedField = data.split('\n').slice(1, -1).map((cell: any) => cell.split(''));
         setField(adjustedField);
-        setFlaggedCells([]);
+        setColumns(adjustedField[0].length);
+        setRows(adjustedField.length);
       }
     };
 
     ws.current = socket;
-  }, []);
+  }, [field]);
 
-  const openCell = (x: number, y: number) => {
+  const handleOpenCell = (x: number, y: number) => {
     const checkFlaggedCell = flaggedCells.includes(`${x}${y}`);
 
     if (!checkFlaggedCell) {
@@ -136,6 +267,7 @@ const Minesweeper = () => {
             {name}
           </button>
         ))}
+        <button onClick={autoSolve}>Auto Solve</button>
       </div>
       <div>
         {field.map((cellsRow, y) => (
@@ -143,7 +275,7 @@ const Minesweeper = () => {
             {cellsRow.map((cell, x) => (
               <span
                 className={styles.fieldCell}
-                onClick={() => openCell(x, y)}
+                onClick={() => handleOpenCell(x, y)}
                 key={Math.random() * 15785}
                 onContextMenu={(e) => handleRightClick(e, x, y)}
               >
