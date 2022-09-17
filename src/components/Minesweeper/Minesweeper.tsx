@@ -2,6 +2,14 @@ import { useState, useRef, useEffect } from 'react';
 import socket from '../../socket';
 import styles from './Minesweeper.module.scss';
 
+type SurroundingCellsType = {
+  position: string,
+  x: number,
+  y: number,
+  outOfBounds?: boolean,
+  value?: string,
+}
+
 const Minesweeper = () => {
   const [field, setField] = useState<string[][]>([]);
   const [previousField, setPreviousField] = useState<string[][]>([]);
@@ -9,6 +17,7 @@ const Minesweeper = () => {
   const [columns, setColumns] = useState(0);
   const [rows, setRows] = useState(0);
   const [autoSolver, setAutoSolver] = useState(false);
+  const [mapPause, setMapPause] = useState(false);
   const ws = useRef<any>(null);
 
   const newLevel = (level: number) => {
@@ -64,6 +73,20 @@ const Minesweeper = () => {
     setPreviousField(field);
   };
 
+  const isCellValidToOpen = ({
+    value, outOfBounds, x, y,
+  }: SurroundingCellsType) => {
+    let isValid = true;
+    const alreadyOpened = value !== '□';
+    const alreadyFlagged = flaggedCells.includes(`${x}${y}`);
+
+    if (outOfBounds || alreadyOpened || alreadyFlagged) {
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
   const getSurroundingCellInfo = (x: number, y: number) => {
     const surroundingBombs = field[x][y];
 
@@ -110,6 +133,8 @@ const Minesweeper = () => {
       },
     ];
 
+    let surroundingBombsRevealed = 0;
+
     // checks if out of bounds and adds known values of the in bounds cells
     surroundingCells = surroundingCells.map((cell) => {
       let outOfBounds = false;
@@ -121,19 +146,47 @@ const Minesweeper = () => {
         outOfBounds = true;
       } else {
         value = field[cell.x][cell.y];
+
+        const alreadyFlagged = flaggedCells.includes(`${cell.x}${cell.y}`);
+
+        if (alreadyFlagged) {
+          surroundingBombsRevealed += 1;
+        }
       }
 
       return { ...cell, outOfBounds, value };
     });
 
-    return { surroundingBombs, surroundingCells };
+    const validCellsForOpen = surroundingCells.filter((cell) => isCellValidToOpen(cell));
+
+    return {
+      surroundingBombs, surroundingCells, validCellsForOpen, surroundingBombsRevealed,
+    };
   };
 
   // function requires reverse coordinates to work ex: instead of (x, y)  to => (y, x) instead
   const checkSurroundingCells = (y: number, x: number) => {
-    const { surroundingBombs, surroundingCells } = getSurroundingCellInfo(y, x);
-    console.log(surroundingCells);
-    // openCell(surroundingCells[2].x, surroundingCells[2].y);
+    const {
+      surroundingBombs, surroundingCells, validCellsForOpen, surroundingBombsRevealed,
+    } = getSurroundingCellInfo(y, x);
+
+    // checks if all surrounding cells have been cleared of mines if so, then opens all valid cells
+    if (Number(surroundingBombs) === surroundingBombsRevealed) {
+      // set on pause new field mapping, before last call to open cell - unpauses to map new field
+      setMapPause(true);
+
+      const lastSendingCell = validCellsForOpen.length - 1;
+
+      validCellsForOpen.forEach((cell, index) => {
+        if (lastSendingCell === index) {
+          // ensures the previous field is saved to compare in next response
+          setPreviousField(field);
+          setMapPause(false);
+        }
+
+        socket.send(`open ${cell.x} ${cell.y}`);
+      });
+    }
   };
 
   const autoSolve = () => {
@@ -170,15 +223,18 @@ const Minesweeper = () => {
     };
 
     socket.onmessage = ({ data }) => {
-      if (data.includes('new') || data.includes('open: OK')
-       || data.includes('open: You lose') || data.includes('open: You win')) {
-        socket.send('map');
-      }
-      if (data.includes('map')) {
-        const adjustedField = data.split('\n').slice(1, -1).map((cell: any) => cell.split(''));
-        setField(adjustedField);
-        setColumns(adjustedField[0].length);
-        setRows(adjustedField.length);
+      console.log('map');
+      if (!mapPause) {
+        if (data.includes('new') || data.includes('open: OK')
+         || data.includes('open: You lose') || data.includes('open: You win')) {
+          socket.send('map');
+        }
+        if (data.includes('map')) {
+          const adjustedField = data.split('\n').slice(1, -1).map((cell: any) => cell.split(''));
+          setField(adjustedField);
+          setColumns(adjustedField[0].length);
+          setRows(adjustedField.length);
+        }
       }
     };
 
@@ -190,6 +246,9 @@ const Minesweeper = () => {
 
     if (!checkFlaggedCell) {
       socket.send(`open ${x} ${y}`);
+
+      // ensures the previous field is saved to compare in next response
+      setPreviousField(field);
     }
   };
 
