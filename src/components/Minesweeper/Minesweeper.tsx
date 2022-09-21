@@ -25,6 +25,16 @@ const Minesweeper = () => {
     setFlaggedCells([]);
   };
 
+  const flagCellAsBomb = (x: number, y: number) => {
+    const cell = `x${x}y${y}`;
+
+    if (flaggedCells.includes(cell)) {
+      setFlaggedCells(flaggedCells.filter((el) => el !== cell));
+    } else {
+      setFlaggedCells([...flaggedCells, cell]);
+    }
+  };
+
   const levels = [
     {
       id: 1,
@@ -170,6 +180,15 @@ const Minesweeper = () => {
       surroundingBombs, surroundingCells, validCellsForOpen, surroundingBombsRevealed,
     } = getSurroundingCellInfo(y, x);
 
+    // flags cells for which are certain to be bombs
+    if (!surroundingBombsRevealed && validCellsForOpen.length === Number(surroundingBombs)) {
+      validCellsForOpen.forEach((cell) => {
+        console.log(`flagged ${cell.x} ${cell.y}`);
+        setPreviousField(field);
+        flagCellAsBomb(cell.y, cell.x);
+      });
+    }
+
     // checks if all surrounding cells have been cleared of mines if so, then opens all valid cells
     if (Number(surroundingBombs) === surroundingBombsRevealed) {
       // set on pause new field mapping, before last call to open cell - unpauses to map new field
@@ -179,12 +198,10 @@ const Minesweeper = () => {
 
       validCellsForOpen.forEach((cell, index) => {
         if (lastSendingCell === index) {
-          // ensures the previous field is saved to compare in next response
-          setPreviousField(field);
           setMapPause(false);
         }
 
-        socket.send(`open ${cell.x} ${cell.y}`);
+        openCell(cell.x, cell.y);
       });
     }
   };
@@ -195,12 +212,12 @@ const Minesweeper = () => {
       setAutoSolver(true);
 
       // opens initial cell
-      openCell(0, 0);
+      openCell(4, 4);
 
       // ensures the previous field is saved to compare in next response
       setPreviousField(field);
     } else {
-      checkSurroundingCells(0, 0);
+      checkSurroundingCells(4, 4);
     }
   };
 
@@ -211,7 +228,7 @@ const Minesweeper = () => {
         autoSolve();
       }
     }
-  }, [field]);
+  }, [field, previousField]);
 
   useEffect(() => {
     socket.onopen = () => {
@@ -292,7 +309,7 @@ const Minesweeper = () => {
         break;
     }
 
-    const checkFlaggedCell = flaggedCells.includes(`${x}${y}`);
+    const checkFlaggedCell = flaggedCells.includes(`x${x}y${y}`);
 
     if (checkFlaggedCell) {
       path = 'assets/mines/flag.svg';
@@ -304,13 +321,7 @@ const Minesweeper = () => {
   const handleRightClick = (e: any, x: number, y: number) => {
     e.preventDefault();
 
-    const cell = `${x}${y}`;
-
-    if (flaggedCells.includes(cell)) {
-      setFlaggedCells(flaggedCells.filter((el) => el !== cell));
-    } else {
-      setFlaggedCells([...flaggedCells, cell]);
-    }
+    flagCellAsBomb(x, y);
   };
 
   return (
