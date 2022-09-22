@@ -14,6 +14,8 @@ const Minesweeper = () => {
   const [field, setField] = useState<string[][]>([]);
   const [previousField, setPreviousField] = useState<string[][]>([]);
   const [flaggedCells, setFlaggedCells] = useState<string[]>([]);
+  const [cellsToOpen, setCellsToOpen] = useState<string[]>([]);
+  const [cellsToFlag, setCellsToFlag] = useState<string[]>([]);
   const [columns, setColumns] = useState(0);
   const [rows, setRows] = useState(0);
   const [autoSolver, setAutoSolver] = useState(false);
@@ -152,7 +154,7 @@ const Minesweeper = () => {
 
       if (cell.x < 0 || cell.y < 0) {
         outOfBounds = true;
-      } else if (cell.x > columns || cell.y > rows) {
+      } else if (cell.x >= columns || cell.y >= rows) {
         outOfBounds = true;
       } else {
         value = field[cell.x][cell.y];
@@ -206,18 +208,37 @@ const Minesweeper = () => {
     }
   };
 
+  const markAllBombs = () => {
+    field.forEach((row, y) => {
+      row.forEach((cell, x) => {
+        const {
+          surroundingBombs, surroundingCells, validCellsForOpen, surroundingBombsRevealed,
+        } = getSurroundingCellInfo(x, y);
+        // THIS NEEDS FIX BUT THE RIGHT DIRECTION M8
+        if (!surroundingBombsRevealed && validCellsForOpen.length === Number(surroundingBombs)
+        && Number(surroundingBombs) !== 0) {
+          setPreviousField(field);
+          flagCellAsBomb(x, y);
+          console.log(x, y);
+        }
+      });
+    });
+  };
+
   const autoSolve = () => {
     if (!autoSolver) {
       // tells useEffect to catch any field updates from the server
       setAutoSolver(true);
 
       // opens initial cell
-      openCell(4, 4);
+      openCell(2, 2);
 
       // ensures the previous field is saved to compare in next response
       setPreviousField(field);
     } else {
-      checkSurroundingCells(4, 4);
+      console.log('riiii');
+      // checkSurroundingCells(4, 4);
+      markAllBombs();
     }
   };
 
