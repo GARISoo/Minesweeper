@@ -208,22 +208,50 @@ const Minesweeper = () => {
     }
   };
 
-  const markAllBombs = () => {
+  const openSafeCells = () => {
     field.forEach((row, y) => {
       row.forEach((cell, x) => {
         const {
           surroundingBombs, surroundingCells, validCellsForOpen, surroundingBombsRevealed,
         } = getSurroundingCellInfo(x, y);
-        // THIS NEEDS FIX BUT THE RIGHT DIRECTION M8
-        if (!surroundingBombsRevealed && validCellsForOpen.length === Number(surroundingBombs)
-        && Number(surroundingBombs) !== 0) {
-          setPreviousField(field);
-          flagCellAsBomb(x, y);
-          console.log(x, y);
+
+        // checks if all surrounding cells have been cleared of mines if so, then opens all valid cells
+        if (Number(surroundingBombs) === surroundingBombsRevealed && Number(surroundingBombs) !== 0) {
+          console.log('SAFE');
         }
       });
     });
   };
+
+  const markAllBombs = () => {
+    let markedCells = flaggedCells;
+    const cellField = field;
+    field.forEach((row, y) => {
+      row.forEach((cell, x) => {
+        const {
+          surroundingBombs, surroundingCells, validCellsForOpen, surroundingBombsRevealed,
+        } = getSurroundingCellInfo(x, y);
+
+        if (!surroundingBombsRevealed && validCellsForOpen.length === Number(surroundingBombs)
+        && Number(surroundingBombs) !== 0) {
+          validCellsForOpen.forEach((validCell) => {
+            const cellCoords = `x${validCell.y}y${validCell.x}`;
+            // console.log(`flagged ${validCell.y} ${validCell.x}`);
+            markedCells = [...markedCells, cellCoords];
+          });
+        }
+      });
+    });
+    const uniqueCells = [...new Set(markedCells)];
+    setFlaggedCells(uniqueCells);
+  };
+
+  // validCellsForOpen.forEach((cell) => {
+  //   const cellCoords = `x${cell.y}y${cell.x}`;
+  //   setFlaggedCells([...flaggedCells, cellCoords]);
+  //   console.log(`flagged ${cell.x} ${cell.y}`);
+  //   setPreviousField(field);
+  // });
 
   const autoSolve = () => {
     if (!autoSolver) {
@@ -236,9 +264,9 @@ const Minesweeper = () => {
       // ensures the previous field is saved to compare in next response
       setPreviousField(field);
     } else {
-      console.log('riiii');
-      // checkSurroundingCells(4, 4);
       markAllBombs();
+      openSafeCells();
+      setAutoSolver(false);
     }
   };
 
@@ -346,38 +374,39 @@ const Minesweeper = () => {
   };
 
   return (
-    <div>
-      <button onClick={() => socket.send('help')}>help</button>
+    !autoSolver ? (
       <div>
-        {levels.map(({ id, name, handleNewLevel }) => (
-          <button
-            className={styles.levelBtn}
-            key={id}
-            onClick={handleNewLevel}
-          >
-            {name}
-          </button>
-        ))}
-        <button onClick={autoSolve}>Auto Solve</button>
+        <button onClick={() => socket.send('help')}>help</button>
+        <div>
+          {levels.map(({ id, name, handleNewLevel }) => (
+            <button
+              className={styles.levelBtn}
+              key={id}
+              onClick={handleNewLevel}
+            >
+              {name}
+            </button>
+          ))}
+          <button onClick={autoSolve}>Auto Solve</button>
+        </div>
+        <div>
+          {field.map((cellsRow, y) => (
+            <div key={Math.random() * 15785} className={styles.fieldRow}>
+              {cellsRow.map((cell, x) => (
+                <span
+                  className={styles.fieldCell}
+                  onClick={() => handleOpenCell(x, y)}
+                  key={Math.random() * 15785}
+                  onContextMenu={(e) => handleRightClick(e, x, y)}
+                >
+                  <img src={determineSVG(cell, x, y)} alt="cell" className={styles.fieldCellSVG} />
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
-      <div>
-        {field.map((cellsRow, y) => (
-          <div key={Math.random() * 15785} className={styles.fieldRow}>
-            {cellsRow.map((cell, x) => (
-              <span
-                className={styles.fieldCell}
-                onClick={() => handleOpenCell(x, y)}
-                key={Math.random() * 15785}
-                onContextMenu={(e) => handleRightClick(e, x, y)}
-              >
-                <img src={determineSVG(cell, x, y)} alt="cell" className={styles.fieldCellSVG} />
-              </span>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+    ) : <h1>Solving...</h1>);
 };
 
 export default Minesweeper;
