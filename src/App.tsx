@@ -1,8 +1,8 @@
 import './App.scss';
-import Minesweeper from './components/Minesweeper/Minesweeper';
+import Minesweepers from './components/Minesweepers/Minesweepers';
 
 const App = () => (
-  <Minesweeper />
+  <Minesweepers />
 );
 
 export default App;

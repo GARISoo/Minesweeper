@@ -87,10 +87,10 @@ const Minesweeper = () => {
 
   const isCellValidToOpen = ({
     value, outOfBounds, x, y,
-  }: SurroundingCellsType) => {
+  }: SurroundingCellsType, theFlaggedCells: string[]) => {
     let isValid = true;
     const alreadyOpened = value !== '□';
-    const alreadyFlagged = flaggedCells.includes(`${x}${y}`);
+    const alreadyFlagged = theFlaggedCells.includes(`${x}${y}`);
 
     if (outOfBounds || alreadyOpened || alreadyFlagged) {
       isValid = false;
@@ -99,8 +99,8 @@ const Minesweeper = () => {
     return isValid;
   };
 
-  const getSurroundingCellInfo = (x: number, y: number) => {
-    const surroundingBombs = field[x][y];
+  const getSurroundingCellInfo = (x: number, y: number, targetField: string[][], theFlaggedCells: string[]) => {
+    const surroundingBombs = targetField[x][y];
 
     let surroundingCells = [
       {
@@ -157,9 +157,9 @@ const Minesweeper = () => {
       } else if (cell.x >= columns || cell.y >= rows) {
         outOfBounds = true;
       } else {
-        value = field[cell.x][cell.y];
+        value = targetField[cell.x][cell.y];
 
-        const alreadyFlagged = flaggedCells.includes(`${cell.x}${cell.y}`);
+        const alreadyFlagged = theFlaggedCells.includes(`x${cell.x}y${cell.y}`);
 
         if (alreadyFlagged) {
           surroundingBombsRevealed += 1;
@@ -169,68 +169,79 @@ const Minesweeper = () => {
       return { ...cell, outOfBounds, value };
     });
 
-    const validCellsForOpen = surroundingCells.filter((cell) => isCellValidToOpen(cell));
+    const validCellsForOpen = surroundingCells.filter((cell) => isCellValidToOpen(cell, theFlaggedCells));
 
     return {
       surroundingBombs, surroundingCells, validCellsForOpen, surroundingBombsRevealed,
     };
   };
 
-  // function requires reverse coordinates to work ex: instead of (x, y)  to => (y, x) instead
-  const checkSurroundingCells = (y: number, x: number) => {
-    const {
-      surroundingBombs, surroundingCells, validCellsForOpen, surroundingBombsRevealed,
-    } = getSurroundingCellInfo(y, x);
+  // // function requires reverse coordinates to work ex: instead of (x, y)  to => (y, x) instead
+  // const checkSurroundingCells = (y: number, x: number) => {
+  //   const {
+  //     surroundingBombs, surroundingCells, validCellsForOpen, surroundingBombsRevealed,
+  //   } = getSurroundingCellInfo(y, x);
 
-    // flags cells for which are certain to be bombs
-    if (!surroundingBombsRevealed && validCellsForOpen.length === Number(surroundingBombs)) {
-      validCellsForOpen.forEach((cell) => {
-        console.log(`flagged ${cell.x} ${cell.y}`);
-        setPreviousField(field);
-        flagCellAsBomb(cell.y, cell.x);
-      });
-    }
+  //   // flags cells for which are certain to be bombs
+  //   if (!surroundingBombsRevealed && validCellsForOpen.length === Number(surroundingBombs)) {
+  //     validCellsForOpen.forEach((cell) => {
+  //       console.log(`flagged ${cell.x} ${cell.y}`);
+  //       setPreviousField(field);
+  //       flagCellAsBomb(cell.y, cell.x);
+  //     });
+  //   }
 
-    // checks if all surrounding cells have been cleared of mines if so, then opens all valid cells
-    if (Number(surroundingBombs) === surroundingBombsRevealed) {
-      // set on pause new field mapping, before last call to open cell - unpauses to map new field
-      setMapPause(true);
+  //   // checks if all surrounding cells have been cleared of mines if so, then opens all valid cells
+  //   if (Number(surroundingBombs) === surroundingBombsRevealed) {
+  //     // set on pause new field mapping, before last call to open cell - unpauses to map new field
+  //     setMapPause(true);
 
-      const lastSendingCell = validCellsForOpen.length - 1;
+  //     const lastSendingCell = validCellsForOpen.length - 1;
 
-      validCellsForOpen.forEach((cell, index) => {
-        if (lastSendingCell === index) {
-          setMapPause(false);
-        }
+  //     validCellsForOpen.forEach((cell, index) => {
+  //       if (lastSendingCell === index) {
+  //         setMapPause(false);
+  //       }
 
-        openCell(cell.x, cell.y);
-      });
-    }
-  };
+  //       openCell(cell.x, cell.y);
+  //     });
+  //   }
+  // };
 
-  const openSafeCells = () => {
-    field.forEach((row, y) => {
+  const openSafeCells = (targetField: string[][], markedCells: string[]) => {
+    let cellsToPop: string[] = [];
+
+    targetField.forEach((row, y) => {
       row.forEach((cell, x) => {
         const {
           surroundingBombs, surroundingCells, validCellsForOpen, surroundingBombsRevealed,
-        } = getSurroundingCellInfo(x, y);
+        } = getSurroundingCellInfo(x, y, targetField, markedCells);
 
         // checks if all surrounding cells have been cleared of mines if so, then opens all valid cells
-        if (Number(surroundingBombs) === surroundingBombsRevealed && Number(surroundingBombs) !== 0) {
-          console.log('SAFE');
+        if ((Number(surroundingBombs) === surroundingBombsRevealed) && Number(surroundingBombs) !== 0) {
+          validCellsForOpen.forEach((validCell) => {
+            const cellCoords = `x${validCell.y}y${validCell.x}`;
+            // console.log(`flagged ${validCell.y} ${validCell.x}`);
+            cellsToPop = [...cellsToPop, cellCoords];
+          });
         }
       });
     });
+
+    const uniqueCellsToPop = [...new Set(cellsToPop)];
+
+    return uniqueCellsToPop;
   };
 
   const markAllBombs = () => {
     let markedCells = flaggedCells;
-    const cellField = field;
-    field.forEach((row, y) => {
+    const targetField = field;
+
+    targetField.forEach((row, y) => {
       row.forEach((cell, x) => {
         const {
           surroundingBombs, surroundingCells, validCellsForOpen, surroundingBombsRevealed,
-        } = getSurroundingCellInfo(x, y);
+        } = getSurroundingCellInfo(x, y, targetField, markedCells);
 
         if (!surroundingBombsRevealed && validCellsForOpen.length === Number(surroundingBombs)
         && Number(surroundingBombs) !== 0) {
@@ -244,6 +255,8 @@ const Minesweeper = () => {
     });
     const uniqueCells = [...new Set(markedCells)];
     setFlaggedCells(uniqueCells);
+    const cellsToPop = openSafeCells(targetField, markedCells);
+    console.log(cellsToPop);
   };
 
   // validCellsForOpen.forEach((cell) => {
@@ -265,7 +278,6 @@ const Minesweeper = () => {
       setPreviousField(field);
     } else {
       markAllBombs();
-      openSafeCells();
       setAutoSolver(false);
     }
   };
