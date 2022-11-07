@@ -25,6 +25,10 @@ const Minesweepers = () => {
     }
   };
 
+  const flagManyCellsAsBomb = (cells: string[]) => {
+    setFlaggedCells([...flaggedCells, ...cells]);
+  };
+
   const levels = [
     {
       id: 1,
@@ -50,6 +54,7 @@ const Minesweepers = () => {
 
   const openCell = (x: number, y: number) => {
     socket.send(`open ${x} ${y}`);
+    console.log('open', x, y);
   };
 
   useEffect(() => {
@@ -62,6 +67,7 @@ const Minesweepers = () => {
     };
 
     socket.onmessage = ({ data }) => {
+      console.log(data);
       const isNewMap = data.includes('map');
 
       if (isNewMap) {
@@ -140,8 +146,21 @@ const Minesweepers = () => {
   };
 
   const tryToSolve = () => {
+    let i = 0;
     const { cellsToOpen, cellsToFlag } = autoSolve(field, flaggedCells);
-    console.log(cellsToOpen, cellsToFlag);
+    if (cellsToFlag.length) {
+      i += 1;
+      flagManyCellsAsBomb(cellsToFlag);
+      console.log('looping:', i);
+      // tryToSolve();
+    }
+    if (cellsToOpen.length) {
+      cellsToOpen.forEach((cell) => {
+        const [x, y] = cell.split(' ');
+        openCell(Number(x), Number(y));
+      });
+    }
+    console.log('cellsToOpen:', cellsToOpen, 'cellsToFlag:', cellsToFlag);
   };
 
   return (

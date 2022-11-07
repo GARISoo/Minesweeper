@@ -182,46 +182,27 @@ const autoSolve = (field: string[][], flaggedCells: string[]) => {
     if (!cellNotOpened) {
       const { cellInfo, revealedBombs, unOpenedCells } = getCellInfo(x, y, field, flaggedCells, columns, rows);
       const cellValue = parseInt(cell, 10);
-      const chanceToHitBomb = ((cellValue - revealedBombs) / unOpenedCells) * 100;
-      console.log(chanceToHitBomb);
-      // const possibleBombs = cellValue - revealedBombs;
-      // const chanceToHitABomb = possibleBombs / unOpenedCells;
-      // console.log(chanceToHitABomb);
-      // console.log(cellValue);
-      // const chanceToHitBomb = (unOpenedCells / (cellValue)) * 100;
-      // const chanceToHitBomb = ((unOpenedCells - (cellValue - revealedBombs)) / unOpenedCells) * 100;
-      // console.log(chanceToHitBomb);
-      // calculate chance to hit a bomb from the surrounding cells
+      const chanceForBombOnAnyEmptyCell = ((cellValue - revealedBombs) / unOpenedCells) * 100;
+      const allSurroundingCellsAreSafe = chanceForBombOnAnyEmptyCell === 0;
+      const allSurroundingCellsAreDangerous = chanceForBombOnAnyEmptyCell === 100;
 
-      // calculate chance to hit a bomb from the surrounding cells
-      // const chanceToHitBomb = (cellValue - surroundingBombs) / (8 - surroundingBombs);
-      // console.log(cellValue, surroundingBombs);
-      // const surroundingCellsFlagged = cellInfo.filter((el) => el.flagged).length;
-      // const surroundingCellsOpened = cellInfo.filter((el) => el.value !== '□' && el.value !== '0').length;
-      // const surroundingCells = cellInfo.filter((el) => !el.outOfBounds);
-      // const surroundingCellsToFlag = surroundingCells.filter((el) => el.value === '□' || el.value === '0');
-      // const surroundingCellsToOpen = surroundingCells.filter((el) => el.value !== '□' && el.value !== '0');
-
-      // calculate chance of bomb in each cell and flag it if it's 100%
-      // if it's 0% open it
-      // if it's 50% open it if there are 2 bombs around
-      // if it's 33% open it if there are 3 bombs around
-      // if it's 25% open it if there are 4 bombs around
-      // if it's 20% open it if there are 5 bombs around
-      // if it's 16% open it if there are 6 bombs around
-      // if it's 14% open it if there are 7 bombs around
-      // if it's 12% open it if there are 8 bombs around
-
-      // console.log(cellInfo);
-      // const { dangerousCell, safeCell } = checkCellStatus(cellInfo);
-
-      // if (dangerousCell) {
-      //   cellsToFlag.push(`${x} ${y}`);
-      // }
-
-      // if (safeCell) {
-      //   cellsToOpen.push(`${x} ${y}`);
-      // }
+      if (allSurroundingCellsAreDangerous) {
+        cellInfo.forEach((el) => {
+          const goodToPush = !el.outOfBounds && !el.flagged && el.value === '□';
+          const alreadyPushed = cellsToFlag.includes(`${el.x} ${el.y}`);
+          if (!alreadyPushed && goodToPush) {
+            cellsToFlag.push(`${el.x} ${el.y}`);
+          }
+        });
+      } else if (allSurroundingCellsAreSafe) {
+        cellInfo.forEach((el) => {
+          const goodToPush = !el.outOfBounds && !el.flagged && el.value === '□';
+          const alreadyPushed = cellsToOpen.includes(`${el.x} ${el.y}`);
+          if (!alreadyPushed && goodToPush) {
+            cellsToOpen.push(`${el.x} ${el.y}`);
+          }
+        });
+      }
     }
   }));
 
