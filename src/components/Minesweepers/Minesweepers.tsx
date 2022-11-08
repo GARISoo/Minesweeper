@@ -6,6 +6,10 @@ import styles from './Minesweepers.module.scss';
 const Minesweepers = () => {
   const [field, setField] = useState<string[][]>([]);
   const [flaggedCells, setFlaggedCells] = useState<string[]>([]);
+  const [cellsToOpen, setCellsToOpen] = useState<string[]>([]);
+  const [cellsToFlag, setCellsToFlag] = useState<string[]>([]);
+  const [autoSolving, setAutoSolving] = useState(false);
+
   const ws = useRef<any>(null);
 
   const newLevel = (level: number) => {
@@ -54,7 +58,6 @@ const Minesweepers = () => {
 
   const openCell = (x: number, y: number) => {
     socket.send(`open ${x} ${y}`);
-    console.log('open', x, y);
   };
 
   useEffect(() => {
@@ -67,7 +70,6 @@ const Minesweepers = () => {
     };
 
     socket.onmessage = ({ data }) => {
-      console.log(data);
       const isNewMap = data.includes('map');
 
       if (isNewMap) {
@@ -146,22 +148,43 @@ const Minesweepers = () => {
   };
 
   const tryToSolve = () => {
-    let i = 0;
-    const { cellsToOpen, cellsToFlag } = autoSolve(field, flaggedCells);
-    if (cellsToFlag.length) {
-      i += 1;
-      flagManyCellsAsBomb(cellsToFlag);
-      console.log('looping:', i);
-      // tryToSolve();
+    setAutoSolving(true);
+
+    const { toOpen, toFlag } = autoSolve(field, flaggedCells);
+
+    if (toFlag.length) {
+      setCellsToFlag(toFlag);
     }
-    if (cellsToOpen.length) {
-      cellsToOpen.forEach((cell) => {
+    if (toOpen.length) {
+      setCellsToOpen(toOpen);
+    }
+
+    if (!toFlag.length && !toOpen.length) {
+      setAutoSolving(false);
+    }
+
+    console.log('cellsToOpen:', cellsToOpen, 'cellsToFlag:', cellsToFlag);
+  };
+
+  const manyCellsToOpen = (cells: string[]) => {
+    if (cells.length) {
+      cells.forEach((cell) => {
         const [x, y] = cell.split(' ');
         openCell(Number(x), Number(y));
       });
     }
-    console.log('cellsToOpen:', cellsToOpen, 'cellsToFlag:', cellsToFlag);
   };
+
+  // eslint-disable-next-line consistent-return
+  useEffect(() => {
+    flagManyCellsAsBomb(cellsToFlag);
+    manyCellsToOpen(cellsToOpen);
+
+    if (autoSolving && (cellsToOpen.length || cellsToFlag.length)) {
+      const interval = setInterval(tryToSolve, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [cellsToFlag, cellsToOpen]);
 
   return (
     <div>

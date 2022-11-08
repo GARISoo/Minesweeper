@@ -173,8 +173,8 @@ const autoSolve = (field: string[][], flaggedCells: string[]) => {
   const columns = field[0].length;
   const rows = field.length;
 
-  const cellsToFlag: string[] = [];
-  const cellsToOpen: string[] = [];
+  const toFlag: string[] = [];
+  const toOpen: string[] = [];
 
   field.forEach((row, y) => row.forEach((cell, x) => {
     const cellNotOpened = cell === '□' || cell === '0';
@@ -189,24 +189,24 @@ const autoSolve = (field: string[][], flaggedCells: string[]) => {
       if (allSurroundingCellsAreDangerous) {
         cellInfo.forEach((el) => {
           const goodToPush = !el.outOfBounds && !el.flagged && el.value === '□';
-          const alreadyPushed = cellsToFlag.includes(`${el.x} ${el.y}`);
+          const alreadyPushed = toFlag.includes(`${el.x} ${el.y}`) || flaggedCells.includes(`${el.x} ${el.y}`);
           if (!alreadyPushed && goodToPush) {
-            cellsToFlag.push(`${el.x} ${el.y}`);
+            toFlag.push(`${el.x} ${el.y}`);
           }
         });
       } else if (allSurroundingCellsAreSafe) {
         cellInfo.forEach((el) => {
           const goodToPush = !el.outOfBounds && !el.flagged && el.value === '□';
-          const alreadyPushed = cellsToOpen.includes(`${el.x} ${el.y}`);
+          const alreadyPushed = toOpen.includes(`${el.x} ${el.y}`) || flaggedCells.includes(`${el.x} ${el.y}`);
           if (!alreadyPushed && goodToPush) {
-            cellsToOpen.push(`${el.x} ${el.y}`);
+            toOpen.push(`${el.x} ${el.y}`);
           }
         });
       }
     }
   }));
 
-  return { cellsToFlag, cellsToOpen };
+  return { toFlag, toOpen };
 };
 
 // make an algorithm for minesweeper auto solver
