@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import autoSolve from '../../helpers/autoSolver';
+import { useHasChanged } from '../../hooks/usePrevious';
 import socket from '../../socket';
 import styles from './Minesweepers.module.scss';
 
@@ -9,6 +10,8 @@ const Minesweepers = () => {
   const [cellsToOpen, setCellsToOpen] = useState<string[]>([]);
   const [cellsToFlag, setCellsToFlag] = useState<string[]>([]);
   const [autoSolving, setAutoSolving] = useState(false);
+  const hasCellsToFlagChanged = useHasChanged(cellsToFlag);
+  const hasCellsToOpenChanged = useHasChanged(cellsToOpen);
 
   const ws = useRef<any>(null);
 
@@ -184,7 +187,15 @@ const Minesweepers = () => {
       const interval = setInterval(tryToSolve, 1000);
       return () => clearInterval(interval);
     }
-  }, [cellsToFlag, cellsToOpen]);
+  }, [cellsToFlag, cellsToOpen, autoSolving]);
+
+  // if something doesnt work, remove this useffect
+  useEffect(() => {
+    if (hasCellsToFlagChanged && hasCellsToOpenChanged) {
+      setAutoSolving(false);
+      console.log('stopped');
+    }
+  }, [hasCellsToFlagChanged]);
 
   return (
     <div>
