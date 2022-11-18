@@ -93,7 +93,7 @@ export const getCellInfo = (
   ];
 
   const revealedBombs = surroundingCellInfo.filter((el) => el.flagged).length;
-  const unOpenedCells = surroundingCellInfo.filter((el) => el.value === '□').length;
+  const unOpenedCells = surroundingCellInfo.filter((el) => el.value === '□' && !el.flagged).length;
 
   const cellValue = parseInt(middleCell, 10);
   const chanceToHitBomb = ((cellValue - revealedBombs) / unOpenedCells) * 100;
@@ -132,8 +132,6 @@ export const getCellInfo = (
   // const surroundingCells = surroundingCellInfo.map((el) => {
   //   const outOfBounds = el.value === '';
   // });
-
-  console.log('surroundingCellInfo', surroundingCellInfo);
 
   return { surroundingCells: surroundingCellInfo };
 };

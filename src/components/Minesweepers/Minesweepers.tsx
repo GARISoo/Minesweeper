@@ -8,7 +8,7 @@ import styles from './Minesweepers.module.scss';
 
 const Minesweepers = () => {
   const {
-    dispatch, field, flaggedCells, cellsToFlag, cellsToOpen, autoSolving, moves,
+    dispatch, field, flaggedCells, autoSolving, moves,
   } = useGameContext();
   const {
     startNewLevel, openCell, openManyCells, flagCell, flagManyCells, getSrcPath, startAutoSolve, handleCells,
@@ -87,7 +87,6 @@ const Minesweepers = () => {
   useEffect(() => {
     if (autoSolving) {
       const { newCellsToFlag, newCellsToOpen } = autoSolve();
-      console.log('newCellsToFlag:', newCellsToFlag, 'newCellsToOpen:', newCellsToOpen);
       const solverStuck = !newCellsToFlag.length && !newCellsToOpen.length;
 
       if (solverStuck) {

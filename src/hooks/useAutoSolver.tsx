@@ -24,7 +24,11 @@ const useAutoSolver = () => {
             if (el.chanceOfBomb === 0) {
               newCellsToOpen.push(targetCell);
             } else if (el.chanceOfBomb === 100) {
-              newCellsToFlag.push(targetCell);
+              const alreadyFlagged = newCellsToFlag.includes(targetCell);
+
+              if (!alreadyFlagged) {
+                newCellsToFlag.push(targetCell);
+              }
             }
           }
         });
