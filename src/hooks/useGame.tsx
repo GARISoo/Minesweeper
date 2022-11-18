@@ -48,8 +48,24 @@ const useGame = () => {
   const flagManyCells = (cells: string[]) => {
     const cellsToFlag = cells.filter((cell) => !flaggedCells.includes(cell));
     const fieldWithAddedFlags = [...flaggedCells, ...cellsToFlag];
-
     dispatch({ type: 'SET_FLAGGED_CELLS', payload: fieldWithAddedFlags });
+  };
+
+  const handleCells = (newCellsToFlag: string[], newCellsToOpen: string[]) => {
+    if (newCellsToFlag.length) {
+      flagManyCells(newCellsToFlag);
+    }
+
+    if (newCellsToOpen.length) {
+      openManyCells(newCellsToOpen);
+    }
+
+    // call dispatch after 1 sec and clear it
+    const timeout = setTimeout(() => {
+      dispatch({ type: 'ADD_MOVES', payload: 1 });
+    }, 2000);
+
+    return () => clearTimeout(timeout);
   };
 
   const getSrcPath = (cell: string, x: number, y: number) => {
@@ -102,8 +118,24 @@ const useGame = () => {
     return path;
   };
 
+  const startAutoSolve = () => {
+    dispatch({ type: 'SET_AUTO_SOLVING', payload: true });
+  };
+
+  const stopAutoSolve = () => {
+    dispatch({ type: 'SET_AUTO_SOLVING', payload: false });
+  };
+
   return {
-    startNewLevel, flagCell, flagManyCells, openCell, openManyCells, getSrcPath,
+    startNewLevel,
+    flagCell,
+    flagManyCells,
+    openCell,
+    openManyCells,
+    getSrcPath,
+    startAutoSolve,
+    stopAutoSolve,
+    handleCells,
   };
 };
 

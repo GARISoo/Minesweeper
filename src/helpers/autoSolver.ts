@@ -5,168 +5,137 @@ type CellInfo = {
   outOfBounds?: boolean;
   value: string;
   flagged: boolean;
+  chanceOfBomb: number;
 };
 
-const getSurroundingCellsInfo = (
-  cell: string, x: number, y: number, field: string[][], flaggedCells: string[], columns: number, rows: number,
+export const getCellInfo = (
+  x: number, y: number, field: string[][], flaggedCells: string[], columns: number, rows: number, cell: string,
 ) => {
-  const cellsToOpen = [];
-  const cellsToFlag = [];
-  let surroundingBombsRevealed: string[] = [];
+  const getCellValue = (yCord: number, xCord: number) => {
+    const outOfBounds = xCord < 0 || xCord >= columns || yCord < 0 || yCord >= rows;
 
-  if (cell === '0' || cell === '□') {
-    return null;
+    if (outOfBounds) {
+      return '';
+    }
+
+    return field[yCord][xCord];
+  };
+
+  const checkIfFlagged = (xCord: number, yCord: number) => flaggedCells.includes(`${xCord} ${yCord}`);
+
+  const middleCell = cell;
+
+  const surroundingCellInfo = [
+    {
+      position: 'topLeft',
+      value: getCellValue(y - 1, x - 1),
+      flagged: checkIfFlagged(x - 1, y - 1),
+      chanceOfBomb: null,
+      x: x - 1,
+      y: y - 1,
+    },
+    {
+      position: 'top',
+      value: getCellValue(y - 1, x),
+      flagged: checkIfFlagged(x, y - 1),
+      chanceOfBomb: null,
+      x,
+      y: y - 1,
+    },
+    {
+      position: 'topRight',
+      value: getCellValue(y - 1, x + 1),
+      flagged: checkIfFlagged(x + 1, y - 1),
+      chanceOfBomb: null,
+      x: x + 1,
+      y: y - 1,
+    },
+    {
+      position: 'right',
+      value: getCellValue(y, x + 1),
+      flagged: checkIfFlagged(x + 1, y),
+      chanceOfBomb: null,
+      x: x + 1,
+      y,
+    },
+    {
+      position: 'bottomRight',
+      value: getCellValue(y + 1, x + 1),
+      flagged: checkIfFlagged(x + 1, y + 1),
+      chanceOfBomb: null,
+      x: x + 1,
+      y: y + 1,
+    },
+    {
+      position: 'bottom',
+      value: getCellValue(y + 1, x),
+      flagged: checkIfFlagged(x, y + 1),
+      chanceOfBomb: null,
+      x,
+      y: y + 1,
+    },
+    {
+      position: 'bottomLeft',
+      value: getCellValue(y + 1, x - 1),
+      flagged: checkIfFlagged(x - 1, y + 1),
+      chanceOfBomb: null,
+      x: x - 1,
+      y: y + 1,
+    },
+    {
+      position: 'left',
+      value: getCellValue(y, x - 1),
+      flagged: checkIfFlagged(x - 1, y),
+      chanceOfBomb: null,
+      x: x - 1,
+      y,
+    },
+  ];
+
+  const revealedBombs = surroundingCellInfo.filter((el) => el.flagged).length;
+  const unOpenedCells = surroundingCellInfo.filter((el) => el.value === '□').length;
+
+  const cellValue = parseInt(middleCell, 10);
+  const chanceToHitBomb = ((cellValue - revealedBombs) / unOpenedCells) * 100;
+
+  // adds all surrounding cells 100% chance for a bomb
+  if (chanceToHitBomb === 100) {
+    const surroundingCells = surroundingCellInfo.map((el) => {
+      const validCell = el.value === '□' && !el.flagged;
+
+      if (validCell) {
+        return { ...el, chanceOfBomb: 100 };
+      }
+
+      return el;
+    });
+
+    return { surroundingCells };
   }
 
-  let surroundingCells = [
-    {
-      position: 'topLeft',
-      x: x - 1,
-      y: y - 1,
-    },
-    {
-      position: 'top',
-      x,
-      y: y - 1,
-    },
-    {
-      position: 'topRight',
-      x: x + 1,
-      y: y - 1,
-    },
-    {
-      position: 'right',
-      x: x + 1,
-      y,
-    },
-    {
-      position: 'bottomRight',
-      x: x + 1,
-      y: y + 1,
-    },
-    {
-      position: 'bottom',
-      x,
-      y: y + 1,
-    },
-    {
-      position: 'bottomLeft',
-      x: x - 1,
-      y: y + 1,
-    },
-    {
-      position: 'left',
-      x: x - 1,
-      y,
-    },
-  ];
+  // adds all surrounding cells 0% chance for a bomb
+  if (chanceToHitBomb === 0) {
+    const surroundingCells = surroundingCellInfo.map((el) => {
+      const validCell = el.value === '□' && !el.flagged;
 
-  // checks if out of bounds and adds known values of the in bounds cells
-  surroundingCells = surroundingCells.map((el) => {
-    let outOfBounds = false;
-    let value = '';
-
-    if (el.x < 0 || el.y < 0) {
-      outOfBounds = true;
-    } else if (el.x >= columns || el.y >= rows) {
-      outOfBounds = true;
-    } else {
-      value = field[el.x][el.y];
-
-      const alreadyFlagged = flaggedCells.includes(`${el.x} ${el.y}`);
-
-      if (alreadyFlagged) {
-        surroundingBombsRevealed = [...surroundingBombsRevealed, `${el.x} ${el.y}`];
+      if (validCell) {
+        return { ...el, chanceOfBomb: 0 };
       }
-    }
 
-    return { ...el, outOfBounds, value };
-  });
+      return el;
+    });
 
-  return surroundingCells;
-};
+    return { surroundingCells };
+  }
 
-const getCellInfo = (
-  x: number, y: number, field: string[][], flaggedCells: string[], columns: number, rows: number,
-) => {
-  const surroundingCells = [
-    {
-      position: 'topLeft',
-      x: x - 1,
-      y: y - 1,
-    },
-    {
-      position: 'top',
-      x,
-      y: y - 1,
-    },
-    {
-      position: 'topRight',
-      x: x + 1,
-      y: y - 1,
-    },
-    {
-      position: 'right',
-      x: x + 1,
-      y,
-    },
-    {
-      position: 'bottomRight',
-      x: x + 1,
-      y: y + 1,
-    },
-    {
-      position: 'bottom',
-      x,
-      y: y + 1,
-    },
-    {
-      position: 'bottomLeft',
-      x: x - 1,
-      y: y + 1,
-    },
-    {
-      position: 'left',
-      x: x - 1,
-      y,
-    },
-  ];
+  // if chancetohitbomb is not 0 or 100, it will recalculate with specific cases
+  // const surroundingCells = surroundingCellInfo.map((el) => {
+  //   const outOfBounds = el.value === '';
+  // });
 
-  let revealedBombs = 0;
-  let unOpenedCells = 0;
+  console.log('surroundingCellInfo', surroundingCellInfo);
 
-  // checks if out of bounds and adds known values of the in bounds cells
-  const surroundingCellsInfo = surroundingCells.map((el) => {
-    let outOfBounds = false;
-    let value = '';
-    let flagged = false;
-
-    if (el.x < 0 || el.y < 0) {
-      outOfBounds = true;
-    } else if (el.x >= columns || el.y >= rows) {
-      outOfBounds = true;
-    } else {
-      value = field[el.y][el.x];
-      const alreadyFlagged = flaggedCells.includes(`${el.x} ${el.y}`);
-
-      if (alreadyFlagged) {
-        flagged = true;
-        revealedBombs += 1;
-      } else if (value === '□') {
-        unOpenedCells += 1;
-      }
-    }
-
-    return {
-      ...el, outOfBounds, value, flagged,
-    };
-  });
-
-  return { cellInfo: surroundingCellsInfo, revealedBombs, unOpenedCells };
-};
-
-const checkCellStatus = (cellInfo: CellInfo[]) => {
-
+  return { surroundingCells: surroundingCellInfo };
 };
 
 const autoSolve = (field: string[][], flaggedCells: string[]) => {
@@ -176,39 +145,33 @@ const autoSolve = (field: string[][], flaggedCells: string[]) => {
   const toFlag: string[] = [];
   const toOpen: string[] = [];
 
-  field.forEach((row, y) => row.forEach((cell, x) => {
-    const cellNotOpened = cell === '□' || cell === '0';
+  // field.forEach((row, y) => row.forEach((cell, x) => {
+  //   const cellNotOpened = cell === '□' || cell === '0';
 
-    if (!cellNotOpened) {
-      const { cellInfo, revealedBombs, unOpenedCells } = getCellInfo(x, y, field, flaggedCells, columns, rows);
-      const cellValue = parseInt(cell, 10);
-      const chanceForBombOnAnyEmptyCell = ((cellValue - revealedBombs) / unOpenedCells) * 100;
-      const allSurroundingCellsAreSafe = chanceForBombOnAnyEmptyCell === 0;
-      const allSurroundingCellsAreDangerous = chanceForBombOnAnyEmptyCell === 100;
+  //   if (!cellNotOpened) {
+  //     const { surroundingCells } = getCellInfo(x, y, field, flaggedCells, columns, rows, cell);
 
-      if (allSurroundingCellsAreDangerous) {
-        cellInfo.forEach((el) => {
-          const goodToPush = !el.outOfBounds && !el.flagged && el.value === '□';
-          const alreadyPushed = toFlag.includes(`${el.x} ${el.y}`) || flaggedCells.includes(`${el.x} ${el.y}`);
-          if (!alreadyPushed && goodToPush) {
-            toFlag.push(`${el.x} ${el.y}`);
-          }
-        });
-      } else if (allSurroundingCellsAreSafe) {
-        cellInfo.forEach((el) => {
-          const goodToPush = !el.outOfBounds && !el.flagged && el.value === '□';
-          const alreadyPushed = toOpen.includes(`${el.x} ${el.y}`) || flaggedCells.includes(`${el.x} ${el.y}`);
-          if (!alreadyPushed && goodToPush) {
-            toOpen.push(`${el.x} ${el.y}`);
-          }
-        });
-      }
-    }
-  }));
+  //     if (allSurroundingCellsAreDangerous) {
+  //       surroundingCells.forEach((el) => {
+  //         const goodToPush = !el.outOfBounds && !el.flagged && el.value === '□';
+  //         const alreadyPushed = toFlag.includes(`${el.x} ${el.y}`) || flaggedCells.includes(`${el.x} ${el.y}`);
+  //         if (!alreadyPushed && goodToPush) {
+  //           toFlag.push(`${el.x} ${el.y}`);
+  //         }
+  //       });
+  //     } else if (allSurroundingCellsAreSafe) {
+  //       surroundingCells.forEach((el) => {
+  //         const goodToPush = !el.outOfBounds && !el.flagged && el.value === '□';
+  //         const alreadyPushed = toOpen.includes(`${el.x} ${el.y}`) || flaggedCells.includes(`${el.x} ${el.y}`);
+  //         if (!alreadyPushed && goodToPush) {
+  //           toOpen.push(`${el.x} ${el.y}`);
+  //         }
+  //       });
+  //     }
+  //   }
+  // }));
 
   return { toFlag, toOpen };
 };
-
-// make an algorithm for minesweeper auto solver
 
 export default autoSolve;

@@ -1,22 +1,19 @@
 /* eslint-disable react/no-array-index-key */
 import { useState, useRef, useEffect } from 'react';
-import autoSolve from '../../helpers/autoSolver';
+import useAutoSolver from '../../hooks/useAutoSolver';
 import useGame from '../../hooks/useGame';
 import useGameContext from '../../hooks/useGameContext';
-import { useHasChanged } from '../../hooks/usePrevious';
 import socket from '../../socket';
 import styles from './Minesweepers.module.scss';
 
 const Minesweepers = () => {
-  const { field, flaggedCells } = useGameContext();
   const {
-    startNewLevel, openCell, openManyCells, flagCell, flagManyCells, getSrcPath,
+    dispatch, field, flaggedCells, cellsToFlag, cellsToOpen, autoSolving, moves,
+  } = useGameContext();
+  const {
+    startNewLevel, openCell, openManyCells, flagCell, flagManyCells, getSrcPath, startAutoSolve, handleCells,
   } = useGame();
-  const [cellsToOpen, setCellsToOpen] = useState<string[]>([]);
-  const [cellsToFlag, setCellsToFlag] = useState<string[]>([]);
-  const [autoSolving, setAutoSolving] = useState(false);
-  const hasCellsToFlagChanged = useHasChanged(cellsToFlag);
-  const hasCellsToOpenChanged = useHasChanged(cellsToOpen);
+  const { autoSolve } = useAutoSolver();
 
   const ws = useRef<any>(null);
 
@@ -49,24 +46,24 @@ const Minesweepers = () => {
     flagCell(x, y, value);
   };
 
-  const tryToSolve = () => {
-    setAutoSolving(true);
+  // const tryToSolve = () => {
+  //   setAutoSolving(true);
 
-    const { toOpen, toFlag } = autoSolve(field, flaggedCells);
+  //   const { toOpen, toFlag } = autoSolve(field, flaggedCells);
 
-    if (toFlag.length) {
-      setCellsToFlag(toFlag);
-    }
-    if (toOpen.length) {
-      setCellsToOpen(toOpen);
-    }
+  //   if (toFlag.length) {
+  //     setCellsToFlag(toFlag);
+  //   }
+  //   if (toOpen.length) {
+  //     setCellsToOpen(toOpen);
+  //   }
 
-    if (!toFlag.length && !toOpen.length) {
-      setAutoSolving(false);
-    }
+  //   if (!toFlag.length && !toOpen.length) {
+  //     setAutoSolving(false);
+  //   }
 
-    console.log('cellsToOpen:', cellsToOpen, 'cellsToFlag:', cellsToFlag);
-  };
+  //   console.log('cellsToOpen:', cellsToOpen, 'cellsToFlag:', cellsToFlag);
+  // };
 
   // eslint-disable-next-line consistent-return
   // useEffect(() => {
@@ -80,17 +77,33 @@ const Minesweepers = () => {
   // }, [cellsToFlag, cellsToOpen, autoSolving]);
 
   // if something doesnt work, remove this useffect
+  // useEffect(() => {
+  //   if (hasCellsToFlagChanged && hasCellsToOpenChanged) {
+  //     setAutoSolving(false);
+  //     console.log('stopped');
+  //   }
+  // }, [hasCellsToFlagChanged]);
+
   useEffect(() => {
-    if (hasCellsToFlagChanged && hasCellsToOpenChanged) {
-      setAutoSolving(false);
-      console.log('stopped');
+    if (autoSolving) {
+      const { newCellsToFlag, newCellsToOpen } = autoSolve();
+      console.log('newCellsToFlag:', newCellsToFlag, 'newCellsToOpen:', newCellsToOpen);
+      const solverStuck = !newCellsToFlag.length && !newCellsToOpen.length;
+
+      if (solverStuck) {
+        console.log('stopped');
+
+        dispatch({ type: 'SET_AUTO_SOLVING', payload: false });
+      } else {
+        handleCells(newCellsToFlag, newCellsToOpen);
+      }
     }
-  }, [hasCellsToFlagChanged]);
+  }, [autoSolving, moves]);
 
   return (
     <div>
       <button onClick={() => socket.send('help')}>help</button>
-      <button onClick={tryToSolve}>solve</button>
+      <button onClick={startAutoSolve}>solve</button>
       <div>
         {levels.map(({ id, name, handleNewLevel }) => (
           <button
