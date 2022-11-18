@@ -26,8 +26,6 @@ type GameContextType = {
     rows: number
     columns: number
     autoSolving: boolean
-    cellsToFlag: string[]
-    cellsToOpen: string[]
     moves: number
     dispatch: (arg: DispatchType) => void
 }
@@ -40,10 +38,6 @@ export const gameReducer = (state: any, action: any) => {
   switch (action.type) {
     case 'SET_FIELD':
       return { ...state, field: action.payload };
-    case 'SET__CELLS_TO_FLAG':
-      return { ...state, cellsToFlag: action.payload };
-    case 'SET__CELLS_TO_OPEN':
-      return { ...state, cellsToOpen: action.payload };
     case 'SET_FLAGGED_CELLS':
       return { ...state, flaggedCells: action.payload };
     case 'SET_ROWS':
@@ -66,8 +60,6 @@ export const GameProvider = ({ children }: GameProviderProps) => {
     rows: 0,
     columns: 0,
     autoSolving: false,
-    cellsToFlag: [],
-    cellsToOpen: [],
     moves: 0,
   });
 
