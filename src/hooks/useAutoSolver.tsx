@@ -1,4 +1,4 @@
-import { getCellInfo } from '../helpers/autoSolver';
+import { CellInfo, getCellInfo } from '../helpers/autoSolver';
 import useGameContext from './useGameContext';
 
 const useAutoSolver = () => {
@@ -16,7 +16,7 @@ const useAutoSolver = () => {
       if (!emptyCell) {
         const { surroundingCells } = getCellInfo(x, y, field, flaggedCells, columns, rows, cell);
 
-        surroundingCells.forEach((el) => {
+        surroundingCells.forEach((el: CellInfo) => {
           const chanceDetermined = el.chanceOfBomb !== null;
           const targetCell = `${el.x} ${el.y}`;
 

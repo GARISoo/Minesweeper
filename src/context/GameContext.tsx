@@ -77,7 +77,6 @@ export const GameProvider = ({ children }: GameProviderProps) => {
 
     socket.onmessage = ({ data }) => {
       const isNewMap = data.includes('map');
-
       if (isNewMap) {
         const adjustedField = data.split('\n').slice(1, -1).map((cell: string) => cell.split(''));
         dispatch({ type: 'SET_FIELD', payload: adjustedField });

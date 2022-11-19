@@ -1,11 +1,12 @@
-type CellInfo = {
+/* eslint-disable no-param-reassign */
+export type CellInfo = {
   position: string;
   x: number;
   y: number;
   outOfBounds?: boolean;
   value: string;
   flagged: boolean;
-  chanceOfBomb: number;
+  chanceOfBomb: number | null;
 };
 
 export const getCellInfo = (
@@ -21,9 +22,59 @@ export const getCellInfo = (
     return field[yCord][xCord];
   };
 
+  const middleCell = cell;
+
   const checkIfFlagged = (xCord: number, yCord: number) => flaggedCells.includes(`${xCord} ${yCord}`);
 
-  const middleCell = cell;
+  const checkOneTwoOneSetup = (surroundingCells: CellInfo[], revealedBombs: number) => {
+    const topCellValid = (Number(surroundingCells[1].value) - revealedBombs) === 1;
+    const bottomCellValid = (Number(surroundingCells[5].value) - revealedBombs) === 1;
+
+    if (topCellValid && bottomCellValid) {
+      const rightSide = [surroundingCells[2], surroundingCells[3], surroundingCells[4]];
+      const rightSideValid = rightSide.every((el) => el.value === '□' && !el.flagged);
+
+      if (rightSideValid) {
+        surroundingCells[2].chanceOfBomb = 100;
+        surroundingCells[4].chanceOfBomb = 100;
+      }
+
+      const leftSide = [surroundingCells[0], surroundingCells[6], surroundingCells[7]];
+      const leftSideValid = leftSide.every((el) => el.value === '□' && !el.flagged);
+
+      if (leftSideValid) {
+        surroundingCells[0].chanceOfBomb = 100;
+        surroundingCells[6].chanceOfBomb = 100;
+      }
+
+      return surroundingCells;
+    }
+
+    const rightCellValid = (Number(surroundingCells[3].value) - revealedBombs) === 1;
+    const leftCellValid = (Number(surroundingCells[7].value) - revealedBombs) === 1;
+
+    if (rightCellValid && leftCellValid) {
+      const topSide = [surroundingCells[0], surroundingCells[1], surroundingCells[2]];
+      const topSideValid = topSide.every((el) => el.value === '□' && !el.flagged);
+
+      if (topSideValid) {
+        surroundingCells[0].chanceOfBomb = 100;
+        surroundingCells[2].chanceOfBomb = 100;
+      }
+
+      const bottomSide = [surroundingCells[4], surroundingCells[5], surroundingCells[6]];
+      const bottomSideValid = bottomSide.every((el) => el.value === '□' && !el.flagged);
+
+      if (bottomSideValid) {
+        surroundingCells[4].chanceOfBomb = 100;
+        surroundingCells[6].chanceOfBomb = 100;
+      }
+
+      return surroundingCells;
+    }
+
+    return surroundingCells;
+  };
 
   const surroundingCellInfo = [
     {
@@ -129,47 +180,13 @@ export const getCellInfo = (
   }
 
   // if chancetohitbomb is not 0 or 100, it will recalculate with specific cases
-  // const surroundingCells = surroundingCellInfo.map((el) => {
-  //   const outOfBounds = el.value === '';
-  // });
+  const middleCellValid = (cellValue - revealedBombs) === 2;
+
+  if (middleCellValid) {
+    const surroundingCells = checkOneTwoOneSetup(surroundingCellInfo, revealedBombs);
+
+    return { surroundingCells };
+  }
 
   return { surroundingCells: surroundingCellInfo };
 };
-
-const autoSolve = (field: string[][], flaggedCells: string[]) => {
-  const columns = field[0].length;
-  const rows = field.length;
-
-  const toFlag: string[] = [];
-  const toOpen: string[] = [];
-
-  // field.forEach((row, y) => row.forEach((cell, x) => {
-  //   const cellNotOpened = cell === '□' || cell === '0';
-
-  //   if (!cellNotOpened) {
-  //     const { surroundingCells } = getCellInfo(x, y, field, flaggedCells, columns, rows, cell);
-
-  //     if (allSurroundingCellsAreDangerous) {
-  //       surroundingCells.forEach((el) => {
-  //         const goodToPush = !el.outOfBounds && !el.flagged && el.value === '□';
-  //         const alreadyPushed = toFlag.includes(`${el.x} ${el.y}`) || flaggedCells.includes(`${el.x} ${el.y}`);
-  //         if (!alreadyPushed && goodToPush) {
-  //           toFlag.push(`${el.x} ${el.y}`);
-  //         }
-  //       });
-  //     } else if (allSurroundingCellsAreSafe) {
-  //       surroundingCells.forEach((el) => {
-  //         const goodToPush = !el.outOfBounds && !el.flagged && el.value === '□';
-  //         const alreadyPushed = toOpen.includes(`${el.x} ${el.y}`) || flaggedCells.includes(`${el.x} ${el.y}`);
-  //         if (!alreadyPushed && goodToPush) {
-  //           toOpen.push(`${el.x} ${el.y}`);
-  //         }
-  //       });
-  //     }
-  //   }
-  // }));
-
-  return { toFlag, toOpen };
-};
-
-export default autoSolve;
