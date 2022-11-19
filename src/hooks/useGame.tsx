@@ -64,7 +64,7 @@ const useGame = () => {
     // call dispatch after 1 sec and clear it and by adding moves triggers useEffect to rerun entire solver
     const timeout = setTimeout(() => {
       dispatch({ type: 'ADD_MOVES', payload: 1 });
-    }, 200);
+    }, 1000);
 
     return () => clearTimeout(timeout);
   };

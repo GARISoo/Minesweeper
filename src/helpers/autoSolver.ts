@@ -26,9 +26,97 @@ export const getCellInfo = (
 
   const checkIfFlagged = (xCord: number, yCord: number) => flaggedCells.includes(`${xCord} ${yCord}`);
 
+  const getSurroundingCellInfo = (xCord: number, yCord: number, specifics: string) => {
+    const cells = [{
+      position: 'topleft',
+      value: getCellValue(yCord - 1, xCord - 1),
+      flagged: checkIfFlagged(xCord - 1, yCord - 1),
+      chanceOfBomb: null,
+      x: xCord - 1,
+      y: yCord - 1,
+    },
+    {
+      position: 'top',
+      value: getCellValue(yCord - 1, xCord),
+      flagged: checkIfFlagged(xCord, yCord - 1),
+      chanceOfBomb: null,
+      x: xCord,
+      y: yCord - 1,
+    },
+    {
+      position: 'topright',
+      value: getCellValue(yCord - 1, xCord + 1),
+      flagged: checkIfFlagged(xCord + 1, yCord - 1),
+      chanceOfBomb: null,
+      x: xCord + 1,
+      y: yCord - 1,
+    },
+    {
+      position: 'right',
+      value: getCellValue(yCord, xCord + 1),
+      flagged: checkIfFlagged(xCord + 1, yCord),
+      chanceOfBomb: null,
+      x: xCord + 1,
+      y: yCord,
+    },
+    {
+      position: 'bottomright',
+      value: getCellValue(yCord + 1, xCord + 1),
+      flagged: checkIfFlagged(xCord + 1, yCord + 1),
+      chanceOfBomb: null,
+      x: xCord + 1,
+      y: yCord + 1,
+    },
+    {
+      position: 'bottom',
+      value: getCellValue(yCord + 1, xCord),
+      flagged: checkIfFlagged(xCord, yCord + 1),
+      chanceOfBomb: null,
+      x: xCord,
+      y: yCord + 1,
+    },
+    {
+      position: 'bottomleft',
+      value: getCellValue(yCord + 1, xCord - 1),
+      flagged: checkIfFlagged(xCord - 1, yCord + 1),
+      chanceOfBomb: null,
+      x: xCord - 1,
+      y: yCord + 1,
+    },
+    {
+      position: 'left',
+      value: getCellValue(yCord, xCord - 1),
+      flagged: checkIfFlagged(xCord - 1, yCord),
+      chanceOfBomb: null,
+      x: xCord - 1,
+      y: yCord,
+    }];
+
+    const specificCells = specifics === 'all' ? cells : cells.filter(({ position }) => position.includes(specifics));
+
+    return specificCells;
+  };
+
   const checkOneTwoOneSetup = (surroundingCells: CellInfo[], revealedBombs: number) => {
-    const topCellValid = (Number(surroundingCells[1].value) - revealedBombs) === 1;
-    const bottomCellValid = (Number(surroundingCells[5].value) - revealedBombs) === 1;
+    const topCellInBounds = !surroundingCells[1].outOfBounds;
+    const bottomCellInBounds = !surroundingCells[5].outOfBounds;
+
+    const topCellSurroundingCells = topCellInBounds && getSurroundingCellInfo(x, y - 1, 'all');
+    let topCellRevealedBombs = 0;
+
+    if (topCellSurroundingCells) {
+      topCellRevealedBombs = topCellSurroundingCells.filter(({ flagged }) => flagged).length;
+    }
+
+    const bottomCellSurroundingCells = bottomCellInBounds && getSurroundingCellInfo(x, y + 1, 'all');
+    let bottomCellRevealedBombs = 0;
+
+    if (bottomCellSurroundingCells) {
+      bottomCellRevealedBombs = bottomCellSurroundingCells.filter(({ flagged }) => flagged).length;
+    }
+
+    const topCellValid = (Number(surroundingCells[1].value) - topCellRevealedBombs) === 1;
+    const bottomCellValid = (Number(surroundingCells[5].value) - bottomCellRevealedBombs) === 1;
 
     if (topCellValid && bottomCellValid) {
       const rightSide = [surroundingCells[2], surroundingCells[3], surroundingCells[4]];
@@ -50,8 +138,25 @@ export const getCellInfo = (
       return surroundingCells;
     }
 
-    const rightCellValid = (Number(surroundingCells[3].value) - revealedBombs) === 1;
-    const leftCellValid = (Number(surroundingCells[7].value) - revealedBombs) === 1;
+    const leftCellInBounds = !surroundingCells[7].outOfBounds;
+    const rightCellInBounds = !surroundingCells[3].outOfBounds;
+
+    const leftCellSurroundingCells = leftCellInBounds && getSurroundingCellInfo(x - 1, y, 'all');
+    let leftCellRevealedBombs = 0;
+
+    if (leftCellSurroundingCells) {
+      leftCellRevealedBombs = leftCellSurroundingCells.filter(({ flagged }) => flagged).length;
+    }
+
+    const rightCellSurroundingCells = rightCellInBounds && getSurroundingCellInfo(x + 1, y, 'all');
+    let rightCellRevealedBombs = 0;
+
+    if (rightCellSurroundingCells) {
+      rightCellRevealedBombs = rightCellSurroundingCells.filter(({ flagged }) => flagged).length;
+    }
+
+    const rightCellValid = (Number(surroundingCells[3].value) - rightCellRevealedBombs) === 1;
+    const leftCellValid = (Number(surroundingCells[7].value) - leftCellRevealedBombs) === 1;
 
     if (rightCellValid && leftCellValid) {
       const topSide = [surroundingCells[0], surroundingCells[1], surroundingCells[2]];
@@ -76,72 +181,7 @@ export const getCellInfo = (
     return surroundingCells;
   };
 
-  const surroundingCellInfo = [
-    {
-      position: 'topLeft',
-      value: getCellValue(y - 1, x - 1),
-      flagged: checkIfFlagged(x - 1, y - 1),
-      chanceOfBomb: null,
-      x: x - 1,
-      y: y - 1,
-    },
-    {
-      position: 'top',
-      value: getCellValue(y - 1, x),
-      flagged: checkIfFlagged(x, y - 1),
-      chanceOfBomb: null,
-      x,
-      y: y - 1,
-    },
-    {
-      position: 'topRight',
-      value: getCellValue(y - 1, x + 1),
-      flagged: checkIfFlagged(x + 1, y - 1),
-      chanceOfBomb: null,
-      x: x + 1,
-      y: y - 1,
-    },
-    {
-      position: 'right',
-      value: getCellValue(y, x + 1),
-      flagged: checkIfFlagged(x + 1, y),
-      chanceOfBomb: null,
-      x: x + 1,
-      y,
-    },
-    {
-      position: 'bottomRight',
-      value: getCellValue(y + 1, x + 1),
-      flagged: checkIfFlagged(x + 1, y + 1),
-      chanceOfBomb: null,
-      x: x + 1,
-      y: y + 1,
-    },
-    {
-      position: 'bottom',
-      value: getCellValue(y + 1, x),
-      flagged: checkIfFlagged(x, y + 1),
-      chanceOfBomb: null,
-      x,
-      y: y + 1,
-    },
-    {
-      position: 'bottomLeft',
-      value: getCellValue(y + 1, x - 1),
-      flagged: checkIfFlagged(x - 1, y + 1),
-      chanceOfBomb: null,
-      x: x - 1,
-      y: y + 1,
-    },
-    {
-      position: 'left',
-      value: getCellValue(y, x - 1),
-      flagged: checkIfFlagged(x - 1, y),
-      chanceOfBomb: null,
-      x: x - 1,
-      y,
-    },
-  ];
+  const surroundingCellInfo = getSurroundingCellInfo(x, y, 'all');
 
   const revealedBombs = surroundingCellInfo.filter((el) => el.flagged).length;
   const unOpenedCells = surroundingCellInfo.filter((el) => el.value === '□' && !el.flagged).length;

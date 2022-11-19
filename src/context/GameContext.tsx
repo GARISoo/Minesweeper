@@ -20,6 +20,20 @@ type DispatchType = {
     payload: unknown
 }
 
+type StateType = {
+    field: string[][]
+    flaggedCells: string[]
+    rows: number
+    columns: number
+    autoSolving: boolean
+    moves: number
+}
+
+type ActionType = {
+    type: string,
+    payload: any
+}
+
 type GameContextType = {
     field: string[][]
     flaggedCells: string[]
@@ -34,18 +48,16 @@ export const GameContext = createContext({} as GameContextType);
 
 export const useGame = () => useContext(GameContext);
 
-export const gameReducer = (state: any, action: any) => {
+export const gameReducer = (state: StateType, action: ActionType) => {
   switch (action.type) {
     case 'SET_FIELD':
-      return { ...state, field: action.payload };
+      return {
+        ...state, field: action.payload, rows: action.payload.length, columns: action.payload[0].length,
+      };
     case 'SET_FLAGGED_CELLS':
       return { ...state, flaggedCells: action.payload };
-    case 'SET_ROWS':
-      return { ...state, rows: action.payload };
     case 'ADD_MOVES':
       return { ...state, moves: state.moves + action.payload };
-    case 'SET_COLUMNS':
-      return { ...state, columns: action.payload };
     case 'SET_AUTO_SOLVING':
       return { ...state, autoSolving: action.payload };
     default:
@@ -63,7 +75,6 @@ export const GameProvider = ({ children }: GameProviderProps) => {
     moves: 0,
   });
 
-  const { autoSolve } = useAutoSolver();
   const ws = useRef<any>(null);
 
   useEffect(() => {
@@ -77,18 +88,25 @@ export const GameProvider = ({ children }: GameProviderProps) => {
 
     socket.onmessage = ({ data }) => {
       const isNewMap = data.includes('map');
+
       if (isNewMap) {
         const adjustedField = data.split('\n').slice(1, -1).map((cell: string) => cell.split(''));
+
+        const start = performance.now();
+        console.log('Start');
+
         dispatch({ type: 'SET_FIELD', payload: adjustedField });
-        dispatch({ type: 'SET_ROWS', payload: adjustedField.length });
-        dispatch({ type: 'SET_COLUMNS', payload: adjustedField[0].length });
+
+        const end = performance.now();
+
+        console.log(`Time to set field: ${end - start}ms`);
       } else {
         socket.send('map');
       }
     };
 
     ws.current = socket;
-  }, []);
+  }, [ws]);
 
   return (
     <GameContext.Provider

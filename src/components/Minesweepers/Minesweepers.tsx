@@ -115,20 +115,23 @@ const Minesweepers = () => {
         ))}
       </div>
       <div>
-        {field.map((cellsRow, y) => (
-          <div key={Math.random() * 12345} className={styles.fieldRow}>
-            {cellsRow.map((cell, x) => (
-              <span
-                className={styles.fieldCell}
-                onClick={() => openCell(x, y)}
-                key={`${y} ${x}`}
-                onContextMenu={(e) => handleRightClick(e, x, y, cell)}
-              >
-                <img src={getSrcPath(cell, x, y)} alt="cell" className={styles.fieldCellSVG} />
-              </span>
-            ))}
-          </div>
-        ))}
+        {field.map((cellsRow, y) => {
+          console.log('mapping');
+          return (
+            <div key={Math.random() * 12345} className={styles.fieldRow}>
+              {cellsRow.map((cell, x) => (
+                <span
+                  className={styles.fieldCell}
+                  onClick={() => openCell(x, y)}
+                  key={`${y} ${x}`}
+                  onContextMenu={(e) => handleRightClick(e, x, y, cell)}
+                >
+                  <img src={getSrcPath(cell, x, y)} alt="cell" className={styles.fieldCellSVG} />
+                </span>
+              ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
