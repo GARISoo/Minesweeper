@@ -5,6 +5,7 @@ import useGame from '../../hooks/useGame';
 import useGameContext from '../../hooks/useGameContext';
 import socket from '../../socket';
 import styles from './Minesweepers.module.scss';
+import '../../App.scss';
 
 const Minesweepers = () => {
   const {
@@ -84,6 +85,13 @@ const Minesweepers = () => {
   //   }
   // }, [hasCellsToFlagChanged]);
 
+  const isFlagged = (x: number, y: number) => {
+    const cell = `${x} ${y}`;
+    const flagged = flaggedCells.includes(cell) ? 'flagged' : '';
+
+    return flagged;
+  };
+
   useEffect(() => {
     if (autoSolving) {
       const { newCellsToFlag, newCellsToOpen } = autoSolve();
@@ -114,24 +122,19 @@ const Minesweepers = () => {
           </button>
         ))}
       </div>
-      <div>
-        {field.map((cellsRow, y) => {
-          console.log('mapping');
-          return (
-            <div key={Math.random() * 12345} className={styles.fieldRow}>
-              {cellsRow.map((cell, x) => (
-                <span
-                  className={styles.fieldCell}
-                  onClick={() => openCell(x, y)}
-                  key={`${y} ${x}`}
-                  onContextMenu={(e) => handleRightClick(e, x, y, cell)}
-                >
-                  <img src={getSrcPath(cell, x, y)} alt="cell" className={styles.fieldCellSVG} />
-                </span>
-              ))}
-            </div>
-          );
-        })}
+      <div className={styles.field}>
+        {field.map((cellsRow, y) => (
+          <div key={y} className={styles.fieldRow}>
+            {cellsRow.map((cell, x) => (
+              <span
+                className={`${styles.fieldCell} value${cell !== '*' ? cell : 'B'} ${cell === '□' && isFlagged(x, y)}`}
+                onClick={() => openCell(x, y)}
+                key={`${y} ${x}`}
+                onContextMenu={(e) => handleRightClick(e, x, y, cell)}
+              />
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );
