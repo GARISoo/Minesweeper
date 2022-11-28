@@ -2,10 +2,11 @@ import socket from '../socket';
 import useGameContext from './useGameContext';
 
 const useGame = () => {
-  const { dispatch, flaggedCells } = useGameContext();
+  const { dispatch, flaggedCells, clearedCells } = useGameContext();
 
   const startNewLevel = (level: number) => {
     socket.send(`new ${level}`);
+
     dispatch({ type: 'SET_FLAGGED_CELLS', payload: [] });
   };
 
@@ -18,11 +19,10 @@ const useGame = () => {
   };
 
   const openManyCells = (cells: string[]) => {
-    if (cells.length) {
-      cells.forEach((cell) => {
-        const [x, y] = cell.split(' ');
-        openCell(Number(x), Number(y));
-      });
+    const notEmpty = cells.length;
+
+    if (notEmpty) {
+      dispatch({ type: 'SET_CELLS_TO_OPEN', payload: cells });
     }
   };
 
@@ -52,7 +52,18 @@ const useGame = () => {
     dispatch({ type: 'SET_FLAGGED_CELLS', payload: fieldWithAddedFlags });
   };
 
-  const handleCells = (newCellsToFlag: string[], newCellsToOpen: string[]) => {
+  const clearManyCells = (cells: string[]) => {
+    const cellsToClear = cells.filter((cell) => !clearedCells.includes(cell));
+    const fieldWithClearedCells = [...clearedCells, ...cellsToClear];
+
+    dispatch({ type: 'SET_CLEARED_CELLS', payload: fieldWithClearedCells });
+  };
+
+  const handleCells = (newCellsToFlag: string[], newCellsToOpen: string[], newClearedCells: string[]) => {
+    if (newClearedCells.length) {
+      clearManyCells(newClearedCells);
+    }
+
     if (newCellsToFlag.length) {
       flagManyCells(newCellsToFlag);
     }
@@ -64,59 +75,9 @@ const useGame = () => {
     // call dispatch after 1 sec and clear it and by adding moves triggers useEffect to rerun entire solver
     const timeout = setTimeout(() => {
       dispatch({ type: 'ADD_MOVES', payload: 1 });
-    }, 100);
+    }, 10);
 
     return () => clearTimeout(timeout);
-  };
-
-  const getSrcPath = (cell: string, x: number, y: number) => {
-    let path = 'assets/mines/';
-
-    switch (cell) {
-      case '0':
-        path += '0.svg';
-        break;
-      case '1':
-        path += '1.svg';
-        break;
-      case '2':
-        path += '2.svg';
-        break;
-      case '3':
-        path += '3.svg';
-        break;
-      case '4':
-        path += '4.svg';
-        break;
-      case '5':
-        path += '5.svg';
-        break;
-      case '6':
-        path += '6.svg';
-        break;
-      case '7':
-        path += '7.svg';
-        break;
-      case '8':
-        path += '8.svg';
-        break;
-      case '□':
-        path += 'empty.svg';
-        break;
-      case '*':
-        path += 'mine.svg';
-        break;
-      default:
-        break;
-    }
-
-    const isFlaggedCell = flaggedCells.includes(`${x} ${y}`);
-
-    if (isFlaggedCell) {
-      path = 'assets/mines/flag.svg';
-    }
-
-    return path;
   };
 
   const startAutoSolve = () => {
@@ -133,7 +94,6 @@ const useGame = () => {
     flagManyCells,
     openCell,
     openManyCells,
-    getSrcPath,
     startAutoSolve,
     stopAutoSolve,
     handleCells,

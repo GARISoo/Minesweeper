@@ -1,5 +1,5 @@
 /* eslint-disable react/no-array-index-key */
-import { useState, useRef, useEffect } from 'react';
+import { useEffect } from 'react';
 import useAutoSolver from '../../hooks/useAutoSolver';
 import useGame from '../../hooks/useGame';
 import useGameContext from '../../hooks/useGameContext';
@@ -12,11 +12,9 @@ const Minesweepers = () => {
     dispatch, field, flaggedCells, autoSolving, moves,
   } = useGameContext();
   const {
-    startNewLevel, openCell, openManyCells, flagCell, flagManyCells, getSrcPath, startAutoSolve, handleCells,
+    startNewLevel, openCell, flagCell, startAutoSolve, handleCells,
   } = useGame();
   const { autoSolve } = useAutoSolver();
-
-  const ws = useRef<any>(null);
 
   const levels = [
     {
@@ -47,44 +45,6 @@ const Minesweepers = () => {
     flagCell(x, y, value);
   };
 
-  // const tryToSolve = () => {
-  //   setAutoSolving(true);
-
-  //   const { toOpen, toFlag } = autoSolve(field, flaggedCells);
-
-  //   if (toFlag.length) {
-  //     setCellsToFlag(toFlag);
-  //   }
-  //   if (toOpen.length) {
-  //     setCellsToOpen(toOpen);
-  //   }
-
-  //   if (!toFlag.length && !toOpen.length) {
-  //     setAutoSolving(false);
-  //   }
-
-  //   console.log('cellsToOpen:', cellsToOpen, 'cellsToFlag:', cellsToFlag);
-  // };
-
-  // eslint-disable-next-line consistent-return
-  // useEffect(() => {
-  //   flagManyCellsAsBomb(cellsToFlag);
-  //   manyCellsToOpen(cellsToOpen);
-
-  //   if (autoSolving && (cellsToOpen.length || cellsToFlag.length)) {
-  //     const interval = setInterval(tryToSolve, 1000);
-  //     return () => clearInterval(interval);
-  //   }
-  // }, [cellsToFlag, cellsToOpen, autoSolving]);
-
-  // if something doesnt work, remove this useffect
-  // useEffect(() => {
-  //   if (hasCellsToFlagChanged && hasCellsToOpenChanged) {
-  //     setAutoSolving(false);
-  //     console.log('stopped');
-  //   }
-  // }, [hasCellsToFlagChanged]);
-
   const isFlagged = (x: number, y: number) => {
     const cell = `${x} ${y}`;
     const flagged = flaggedCells.includes(cell) ? 'flagged' : '';
@@ -94,15 +54,13 @@ const Minesweepers = () => {
 
   useEffect(() => {
     if (autoSolving) {
-      const { newCellsToFlag, newCellsToOpen } = autoSolve();
+      const { newCellsToFlag, newCellsToOpen, newClearedCells } = autoSolve();
       const solverStuck = !newCellsToFlag.length && !newCellsToOpen.length;
 
       if (solverStuck) {
-        console.log('stopped');
-
         dispatch({ type: 'SET_AUTO_SOLVING', payload: false });
       } else {
-        handleCells(newCellsToFlag, newCellsToOpen);
+        handleCells(newCellsToFlag, newCellsToOpen, newClearedCells);
       }
     }
   }, [autoSolving, moves]);

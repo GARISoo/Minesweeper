@@ -181,9 +181,14 @@ export const getCellInfo = (
     return surroundingCells;
   };
 
+  // const checkOneOneOneSetup = (surroundingCells: CellInfo[]) => {
+  // };
+
   const surroundingCellInfo = getSurroundingCellInfo(x, y, 'all');
 
   const cellCleared = surroundingCellInfo.every(({ value, flagged }) => value !== '□' || flagged);
+
+  console.log('cellCleared', cellCleared, x, y);
 
   const revealedBombs = surroundingCellInfo.filter((el) => el.flagged).length;
   const unOpenedCells = surroundingCellInfo.filter((el) => el.value === '□' && !el.flagged).length;
@@ -222,13 +227,24 @@ export const getCellInfo = (
   }
 
   // if chancetohitbomb is not 0 or 100, it will recalculate with specific cases
-  const middleCellValid = (cellValue - revealedBombs) === 2;
 
-  if (middleCellValid) {
+  // checks the 1-2-1 setup
+  const middleCellValidAsTwo = (cellValue - revealedBombs) === 2;
+
+  if (middleCellValidAsTwo) {
     const surroundingCells = checkOneTwoOneSetup(surroundingCellInfo, revealedBombs);
 
     return { surroundingCells };
   }
+
+  // checks the 1-1-1 setup
+  // const middleCellValidAsOne = (cellValue - revealedBombs) === 1;
+
+  // if (middleCellValidAsOne) {
+  //   const surroundingCells = checkOneOneOneSetup(surroundingCellInfo);
+
+  //   return { surroundingCells };
+  // }
 
   return { surroundingCells: surroundingCellInfo, cellCleared };
 };

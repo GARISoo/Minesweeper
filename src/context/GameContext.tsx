@@ -23,6 +23,8 @@ type DispatchType = {
 type StateType = {
     field: string[][]
     flaggedCells: string[]
+    clearedCells: string[]
+    cellsToOpen: string[]
     rows: number
     columns: number
     autoSolving: boolean
@@ -37,6 +39,8 @@ type ActionType = {
 type GameContextType = {
     field: string[][]
     flaggedCells: string[]
+    clearedCells: string[]
+    cellsToOpen: string[]
     rows: number
     columns: number
     autoSolving: boolean
@@ -56,10 +60,16 @@ export const gameReducer = (state: StateType, action: ActionType) => {
       };
     case 'SET_FLAGGED_CELLS':
       return { ...state, flaggedCells: action.payload };
+    case 'SET_CLEARED_CELLS':
+      return { ...state, clearedCells: action.payload };
     case 'ADD_MOVES':
       return { ...state, moves: state.moves + action.payload };
     case 'SET_AUTO_SOLVING':
       return { ...state, autoSolving: action.payload };
+    case 'SET_OPENING_CELLS':
+      return { ...state, openingManyCells: action.payload };
+    case 'SET_CELLS_TO_OPEN':
+      return { ...state, cellsToOpen: action.payload };
     default:
       return state;
   }
@@ -69,6 +79,9 @@ export const GameProvider = ({ children }: GameProviderProps) => {
   const [state, dispatch] = useReducer(gameReducer, {
     field: [],
     flaggedCells: [],
+    clearedCells: [],
+    cellsToOpen: [],
+    openingManyCells: false,
     rows: 0,
     columns: 0,
     autoSolving: false,
@@ -76,6 +89,24 @@ export const GameProvider = ({ children }: GameProviderProps) => {
   });
 
   const ws = useRef<any>(null);
+  const { cellsToOpen, flaggedCells } = state;
+
+  useEffect(() => {
+    const notEmpty = cellsToOpen.length;
+
+    if (notEmpty) {
+      const [x, y] = cellsToOpen[0].split(' ').map((el: string) => +el);
+      const cellNotFlagged = !flaggedCells.includes(`${x} ${y}`);
+
+      const newCellsToOpen = cellsToOpen.slice(1);
+
+      dispatch({ type: 'SET_CELLS_TO_OPEN', payload: newCellsToOpen });
+
+      if (cellNotFlagged) {
+        ws.current.send(`open ${x} ${y}`);
+      }
+    }
+  }, [cellsToOpen]);
 
   useEffect(() => {
     socket.onopen = () => {
@@ -89,7 +120,7 @@ export const GameProvider = ({ children }: GameProviderProps) => {
     socket.onmessage = ({ data }) => {
       const isNewMap = data.includes('map');
 
-      if (isNewMap) {
+      if (isNewMap && !cellsToOpen.length) {
         const adjustedField = data.split('\n').slice(1, -1).map((cell: string) => cell.split(''));
 
         const start = performance.now();
