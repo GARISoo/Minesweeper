@@ -2,7 +2,7 @@ import socket from '../socket';
 import useGameContext from './useGameContext';
 
 const useGame = () => {
-  const { dispatch, flaggedCells, clearedCells } = useGameContext();
+  const { dispatch, flaggedCells } = useGameContext();
 
   const startNewLevel = (level: number) => {
     socket.send(`new ${level}`);
@@ -52,17 +52,17 @@ const useGame = () => {
     dispatch({ type: 'SET_FLAGGED_CELLS', payload: fieldWithAddedFlags });
   };
 
-  const clearManyCells = (cells: string[]) => {
-    const cellsToClear = cells.filter((cell) => !clearedCells.includes(cell));
-    const fieldWithClearedCells = [...clearedCells, ...cellsToClear];
+  // const clearManyCells = (cells: string[]) => {
+  //   const cellsToClear = cells.filter((cell) => !clearedCells.includes(cell));
+  //   const fieldWithClearedCells = [...clearedCells, ...cellsToClear];
 
-    dispatch({ type: 'SET_CLEARED_CELLS', payload: fieldWithClearedCells });
-  };
+  //   dispatch({ type: 'SET_CLEARED_CELLS', payload: fieldWithClearedCells });
+  // };
 
-  const handleCells = (newCellsToFlag: string[], newCellsToOpen: string[], newClearedCells: string[]) => {
-    if (newClearedCells.length) {
-      clearManyCells(newClearedCells);
-    }
+  const handleCells = (newCellsToFlag: string[], newCellsToOpen: string[]) => {
+    // if (newClearedCells.length) {
+    //   clearManyCells(newClearedCells);
+    // }
 
     if (newCellsToFlag.length) {
       flagManyCells(newCellsToFlag);

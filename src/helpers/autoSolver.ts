@@ -186,9 +186,9 @@ export const getCellInfo = (
 
   const surroundingCellInfo = getSurroundingCellInfo(x, y, 'all');
 
-  const cellCleared = surroundingCellInfo.every(({ value, flagged }) => value !== '□' || flagged);
+  // const cellCleared = surroundingCellInfo.every(({ value, flagged }) => value !== '□' || flagged);
 
-  console.log('cellCleared', cellCleared, x, y);
+  // console.log('cellCleared', cellCleared, x, y);
 
   const revealedBombs = surroundingCellInfo.filter((el) => el.flagged).length;
   const unOpenedCells = surroundingCellInfo.filter((el) => el.value === '□' && !el.flagged).length;
@@ -246,5 +246,5 @@ export const getCellInfo = (
   //   return { surroundingCells };
   // }
 
-  return { surroundingCells: surroundingCellInfo, cellCleared };
+  return { surroundingCells: surroundingCellInfo };
 };

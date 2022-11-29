@@ -3,26 +3,25 @@ import useGameContext from './useGameContext';
 
 const useAutoSolver = () => {
   const {
-    dispatch, field, flaggedCells, clearedCells, columns, rows,
+    dispatch, field, flaggedCells, columns, rows,
   } = useGameContext();
 
   const autoSolve = () => {
     const newCellsToFlag: string[] = [];
     const newCellsToOpen: string[] = [];
-    const newClearedCells: string[] = [];
+    // const newClearedCells: string[] = [];
 
     let restartLoop = false;
 
-    console.log(clearedCells);
+    // console.log(clearedCells);
 
     field.every((row, y) => {
       row.every((cell, x) => {
         const emptyCell = cell === '□' || cell === '0';
-        const cellHasBeenCleared = clearedCells.includes(`${x} ${y}`) || newClearedCells.includes(`${x} ${y}`);
+        // const cellHasBeenCleared = clearedCells.includes(`${x} ${y}`) || newClearedCells.includes(`${x} ${y}`);
 
-        if (!emptyCell && !cellHasBeenCleared) {
-          console.log('emptyCell', emptyCell, x, y, cell);
-          const { surroundingCells, cellCleared } = getCellInfo(x, y, field, flaggedCells, columns, rows, cell);
+        if (!emptyCell) {
+          const { surroundingCells } = getCellInfo(x, y, field, flaggedCells, columns, rows, cell);
 
           const initialCellsToFlagLength = newCellsToFlag.length;
           const initialCellsToOpenLength = newCellsToOpen.length;
@@ -48,14 +47,14 @@ const useAutoSolver = () => {
             }
           });
 
-          if (cellCleared) {
-            const targetCell = `${x} ${y}`;
-            const alreadyCleared = newClearedCells.includes(targetCell);
+          // if (cellCleared) {
+          //   const targetCell = `${x} ${y}`;
+          //   const alreadyCleared = newClearedCells.includes(targetCell);
 
-            if (!alreadyCleared) {
-              newClearedCells.push(targetCell);
-            }
-          }
+          //   if (!alreadyCleared) {
+          //     newClearedCells.push(targetCell);
+          //   }
+          // }
 
           const cellsToFlagLengthChanged = newCellsToFlag.length !== initialCellsToFlagLength;
           const cellsToOpenLengthChanged = newCellsToOpen.length !== initialCellsToOpenLength;
@@ -71,7 +70,7 @@ const useAutoSolver = () => {
       return !restartLoop;
     });
 
-    return { newCellsToFlag, newCellsToOpen, newClearedCells };
+    return { newCellsToFlag, newCellsToOpen };
   };
 
   // nbmh

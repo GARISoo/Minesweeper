@@ -23,7 +23,7 @@ type DispatchType = {
 type StateType = {
     field: string[][]
     flaggedCells: string[]
-    clearedCells: string[]
+    // clearedCells: string[]
     cellsToOpen: string[]
     rows: number
     columns: number
@@ -39,7 +39,7 @@ type ActionType = {
 type GameContextType = {
     field: string[][]
     flaggedCells: string[]
-    clearedCells: string[]
+    // clearedCells: string[]
     cellsToOpen: string[]
     rows: number
     columns: number
@@ -60,8 +60,8 @@ export const gameReducer = (state: StateType, action: ActionType) => {
       };
     case 'SET_FLAGGED_CELLS':
       return { ...state, flaggedCells: action.payload };
-    case 'SET_CLEARED_CELLS':
-      return { ...state, clearedCells: action.payload };
+    // case 'SET_CLEARED_CELLS':
+    //   return { ...state, clearedCells: action.payload };
     case 'ADD_MOVES':
       return { ...state, moves: state.moves + action.payload };
     case 'SET_AUTO_SOLVING':
@@ -79,7 +79,7 @@ export const GameProvider = ({ children }: GameProviderProps) => {
   const [state, dispatch] = useReducer(gameReducer, {
     field: [],
     flaggedCells: [],
-    clearedCells: [],
+    // clearedCells: [],
     cellsToOpen: [],
     openingManyCells: false,
     rows: 0,

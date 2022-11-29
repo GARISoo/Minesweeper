@@ -54,13 +54,13 @@ const Minesweepers = () => {
 
   useEffect(() => {
     if (autoSolving) {
-      const { newCellsToFlag, newCellsToOpen, newClearedCells } = autoSolve();
+      const { newCellsToFlag, newCellsToOpen } = autoSolve();
       const solverStuck = !newCellsToFlag.length && !newCellsToOpen.length;
 
       if (solverStuck) {
         dispatch({ type: 'SET_AUTO_SOLVING', payload: false });
       } else {
-        handleCells(newCellsToFlag, newCellsToOpen, newClearedCells);
+        handleCells(newCellsToFlag, newCellsToOpen);
       }
     }
   }, [autoSolving, moves]);
