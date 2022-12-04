@@ -97,7 +97,7 @@ export const getCellInfo = (
     return specificCells;
   };
 
-  const checkOneTwoOneSetup = (surroundingCells: CellInfo[], revealedBombs: number) => {
+  const checkOneTwoOneSetup = (surroundingCells: CellInfo[]) => {
     const topCellInBounds = !surroundingCells[1].outOfBounds;
     const bottomCellInBounds = !surroundingCells[5].outOfBounds;
 
@@ -181,8 +181,161 @@ export const getCellInfo = (
     return surroundingCells;
   };
 
-  // const checkOneOneOneSetup = (surroundingCells: CellInfo[]) => {
-  // };
+  const checkOneOneOneSetup = (surroundingCells: CellInfo[]) => {
+    const topSide = [surroundingCells[0], surroundingCells[1], surroundingCells[2]];
+    const rightSide = [surroundingCells[2], surroundingCells[3], surroundingCells[4]];
+    const bottomSide = [surroundingCells[4], surroundingCells[5], surroundingCells[6]];
+    const leftSide = [surroundingCells[6], surroundingCells[7], surroundingCells[0]];
+
+    const topCellInBounds = !surroundingCells[1].outOfBounds;
+    const rightCellInBounds = !surroundingCells[3].outOfBounds;
+    const bottomCellInBounds = !surroundingCells[5].outOfBounds;
+    const leftCellInBounds = !surroundingCells[7].outOfBounds;
+
+    if (!topCellInBounds && !bottomCellInBounds) {
+      return surroundingCells;
+    }
+
+    if (!rightCellInBounds && !leftCellInBounds) {
+      return surroundingCells;
+    }
+    console.log('got this far');
+    const topCellSurroundingCells = topCellInBounds && getSurroundingCellInfo(x, y - 1, 'all');
+
+    let topCellRevealedBombs = 0;
+    let topOfTopCellIsSolid = false;
+
+    if (topCellSurroundingCells) {
+      topCellRevealedBombs = topCellSurroundingCells.filter(({ flagged }) => flagged).length;
+      topOfTopCellIsSolid = [
+        topCellSurroundingCells[0],
+        topCellSurroundingCells[1],
+        topCellSurroundingCells[2],
+      ].every(({ value }) => value !== '□');
+    }
+
+    const bottomCellSurroundingCells = bottomCellInBounds && getSurroundingCellInfo(x, y + 1, 'all');
+    let bottomCellRevealedBombs = 0;
+    let bottomOfBottomCellIsSolid = false;
+
+    if (bottomCellSurroundingCells) {
+      bottomCellRevealedBombs = bottomCellSurroundingCells.filter(({ flagged }) => flagged).length;
+      bottomOfBottomCellIsSolid = [
+        bottomCellSurroundingCells[4],
+        bottomCellSurroundingCells[5],
+        bottomCellSurroundingCells[6],
+      ].every(({ value }) => value !== '□');
+    }
+
+    const topCellValid = (Number(surroundingCells[1].value) - topCellRevealedBombs) === 1;
+    const bottomCellValid = (Number(surroundingCells[5].value) - bottomCellRevealedBombs) === 1;
+
+    if (topCellValid && bottomCellValid) {
+      const rightSideUnopened = rightSide.every((el) => el.value === '□' && !el.flagged);
+      const leftSideUnopened = leftSide.every((el) => el.value === '□' && !el.flagged);
+
+      if (rightSideUnopened && !leftSideUnopened) {
+        const leftSideOpened = leftSide.every((el) => el.value !== '□');
+
+        if (leftSideOpened) {
+          if (topOfTopCellIsSolid && !bottomOfBottomCellIsSolid) {
+            surroundingCells[4].chanceOfBomb = 0;
+            return surroundingCells;
+          }
+
+          if (bottomOfBottomCellIsSolid && !topOfTopCellIsSolid) {
+            surroundingCells[2].chanceOfBomb = 0;
+            return surroundingCells;
+          }
+        }
+      }
+
+      if (leftSideUnopened && !rightSideUnopened) {
+        const rightSideOpened = rightSide.every((el) => el.value !== '□');
+
+        if (rightSideOpened) {
+          if (topOfTopCellIsSolid && !bottomOfBottomCellIsSolid) {
+            surroundingCells[6].chanceOfBomb = 0;
+            return surroundingCells;
+          }
+
+          if (bottomOfBottomCellIsSolid && !topOfTopCellIsSolid) {
+            surroundingCells[0].chanceOfBomb = 0;
+            return surroundingCells;
+          }
+        }
+      }
+    }
+
+    const rightCellSurroundingCells = rightCellInBounds && getSurroundingCellInfo(x + 1, y, 'all');
+    let rightCellRevealedBombs = 0;
+    let rightOfRightCellIsSolid = false;
+
+    if (rightCellSurroundingCells) {
+      rightCellRevealedBombs = rightCellSurroundingCells.filter(({ flagged }) => flagged).length;
+      rightOfRightCellIsSolid = [
+        rightCellSurroundingCells[2],
+        rightCellSurroundingCells[3],
+        rightCellSurroundingCells[4],
+      ].every(({ value }) => value !== '□');
+    }
+
+    const leftCellSurroundingCells = leftCellInBounds && getSurroundingCellInfo(x - 1, y, 'all');
+    let leftCellRevealedBombs = 0;
+    let leftOfLeftCellIsSolid = false;
+
+    if (leftCellSurroundingCells) {
+      leftCellRevealedBombs = leftCellSurroundingCells.filter(({ flagged }) => flagged).length;
+      leftOfLeftCellIsSolid = [
+        leftCellSurroundingCells[6],
+        leftCellSurroundingCells[7],
+        leftCellSurroundingCells[0],
+      ].every(({ value }) => value !== '□');
+    }
+
+    const rightCellValid = (Number(surroundingCells[3].value) - rightCellRevealedBombs) === 1;
+    const leftCellValid = (Number(surroundingCells[7].value) - leftCellRevealedBombs) === 1;
+
+    if (rightCellValid && leftCellValid) {
+      const topSideUnopened = topSide.every((el) => el.value === '□' && !el.flagged);
+      const bottomSideUnopened = bottomSide.every((el) => el.value === '□' && !el.flagged);
+      console.log(topSideUnopened, bottomSideUnopened);
+
+      if (topSideUnopened && !bottomSideUnopened) {
+        const bottomSideOpened = bottomSide.every((el) => el.value !== '□');
+
+        if (bottomSideOpened) {
+          if (rightOfRightCellIsSolid && !leftOfLeftCellIsSolid) {
+            surroundingCells[0].chanceOfBomb = 0;
+            return surroundingCells;
+          }
+
+          if (leftOfLeftCellIsSolid && !rightOfRightCellIsSolid) {
+            surroundingCells[2].chanceOfBomb = 0;
+            return surroundingCells;
+          }
+        }
+      }
+
+      if (bottomSideUnopened && !topSideUnopened) {
+        const topSideOpened = topSide.every((el) => el.value !== '□');
+
+        if (topSideOpened) {
+          if (rightOfRightCellIsSolid && !leftOfLeftCellIsSolid) {
+            surroundingCells[6].chanceOfBomb = 0;
+            return surroundingCells;
+          }
+
+          if (leftOfLeftCellIsSolid && !rightOfRightCellIsSolid) {
+            surroundingCells[4].chanceOfBomb = 0;
+            return surroundingCells;
+          }
+        }
+      }
+    }
+
+    return surroundingCells;
+  };
 
   const surroundingCellInfo = getSurroundingCellInfo(x, y, 'all');
 
@@ -232,19 +385,19 @@ export const getCellInfo = (
   const middleCellValidAsTwo = (cellValue - revealedBombs) === 2;
 
   if (middleCellValidAsTwo) {
-    const surroundingCells = checkOneTwoOneSetup(surroundingCellInfo, revealedBombs);
+    const surroundingCells = checkOneTwoOneSetup(surroundingCellInfo);
 
     return { surroundingCells };
   }
 
   // checks the 1-1-1 setup
-  // const middleCellValidAsOne = (cellValue - revealedBombs) === 1;
+  const middleCellValidAsOne = (cellValue - revealedBombs) === 1;
 
-  // if (middleCellValidAsOne) {
-  //   const surroundingCells = checkOneOneOneSetup(surroundingCellInfo);
+  if (middleCellValidAsOne) {
+    const surroundingCells = checkOneOneOneSetup(surroundingCellInfo);
 
-  //   return { surroundingCells };
-  // }
+    return { surroundingCells };
+  }
 
   return { surroundingCells: surroundingCellInfo };
 };
