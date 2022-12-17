@@ -199,7 +199,7 @@ export const getCellInfo = (
     if (!rightCellInBounds && !leftCellInBounds) {
       return surroundingCells;
     }
-    console.log('got this far');
+
     const topCellSurroundingCells = topCellInBounds && getSurroundingCellInfo(x, y - 1, 'all');
 
     let topCellRevealedBombs = 0;
@@ -391,13 +391,13 @@ export const getCellInfo = (
   }
 
   // checks the 1-1-1 setup
-  const middleCellValidAsOne = (cellValue - revealedBombs) === 1;
+  // const middleCellValidAsOne = (cellValue - revealedBombs) === 1;
 
-  if (middleCellValidAsOne) {
-    const surroundingCells = checkOneOneOneSetup(surroundingCellInfo);
+  // if (middleCellValidAsOne) {
+  //   const surroundingCells = checkOneOneOneSetup(surroundingCellInfo);
 
-    return { surroundingCells };
-  }
+  //   return { surroundingCells };
+  // }
 
   return { surroundingCells: surroundingCellInfo };
 };
